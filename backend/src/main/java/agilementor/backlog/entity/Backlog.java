@@ -55,12 +55,15 @@ public class Backlog {
         Sprint sprint, Story story, Member assignee) {
         this.title = title;
         this.description = description;
-        this.status = Status.TODO;
+        this.status = Status.IN_PROGRESS;
         this.priority = priority;
         this.project = project;
         this.sprint = sprint;
         this.story = story;
         this.assignee = assignee;
+    }
+
+    public Backlog(String s, String description, Status status) {
     }
 
     public Long getBacklogId() {
