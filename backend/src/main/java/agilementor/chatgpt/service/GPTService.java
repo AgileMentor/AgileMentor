@@ -11,7 +11,6 @@ import agilementor.chatgpt.dto.GPTResponse.StoryDTO;
 import agilementor.chatgpt.dto.ProjectResponseDTO;
 import agilementor.chatgpt.dto.SprintResponseDTO;
 import agilementor.chatgpt.dto.StoryResponseDTO;
-import agilementor.common.exception.FailedToParseException;
 import agilementor.common.exception.NotJsonResponseException;
 import agilementor.common.exception.SprintNotFoundException;
 import agilementor.common.exception.StoryNotFoundException;
@@ -26,12 +25,12 @@ import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClient.Builder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class GPTService {

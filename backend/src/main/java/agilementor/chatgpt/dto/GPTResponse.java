@@ -29,16 +29,16 @@ public class GPTResponse {
     }
 
     public void setChoices(Choice[] choices) {
-        this.choices=choices;
+        this.choices = choices;
 
     }
 
     public void setStories(List<StoryDTO> stories) {
-        this.stories=stories;
+        this.stories = stories;
     }
 
     public void setSprints(List<SprintDTO> sprints) {
-        this.sprints=sprints;
+        this.sprints = sprints;
     }
 
     // 기존 Inner Classes
