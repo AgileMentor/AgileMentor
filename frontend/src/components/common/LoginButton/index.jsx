@@ -4,12 +4,12 @@ import styled from 'styled-components';
 const GoogleLoginButton = () => {
   const handleLoginClick = () => {
     const googleOAuthURL = // api URL
-      (window.location.href = googleOAuthURL);
+    window.location.href = googleOAuthURL;
   };
 
   return (
     <GoogleButton onClick={handleLoginClick}>
-      <GoogleImage src="/image/google_login.png" alt="Google logo" />
+      <GoogleImage src='/image/google_login.png' alt='Google logo' />
     </GoogleButton>
   );
 };

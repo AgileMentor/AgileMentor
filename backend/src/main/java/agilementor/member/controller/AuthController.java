@@ -34,18 +34,18 @@ public class AuthController {
             idToken = authClientService.requestIdToken(code);
         } catch (Exception e) {
             // todo: 로그인 실패 페이지 추가
-            return "redirect:/";
+            return "redirect:http://localhost:3000/";
         }
 
         Long memberId = memberService.registerOrUpdateMember(idToken);
         httpSession.setAttribute("memberId", memberId);
 
-        return "redirect:/dashboard";
+        return "redirect:http://localhost:3000/dashboard";
     }
 
     @GetMapping("/logout")
     public String logout(HttpSession httpSession) {
         httpSession.invalidate();
-        return "redirect:/";
+        return "redirect:http://localhost:3000/";
     }
 }

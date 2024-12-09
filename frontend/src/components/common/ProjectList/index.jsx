@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, IconButton, Stack, ButtonBase } from '@mui/material';
+import { Box, Typography, IconButton, ButtonBase } from '@mui/material';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 // eslint-disable-next-line import/no-unresolved
 import MinModal from '@components/common/MinModal';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -10,10 +8,10 @@ import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
 const ICON_SIZE = 30;
-const FONT_SIZE = '0.8rem';
+const FONT_SIZE = '1rem';
 
 const ProjectList = () => {
-  const { projects, setProjects } = useProjects();
+  const { projects, fetchProjects } = useProjects();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectTitle, setProjectTitle] = useState('');
 
@@ -23,33 +21,30 @@ const ProjectList = () => {
     setProjectTitle('');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (projectTitle.trim() === '') {
       alert('프로젝트 이름을 입력해 주세요.');
       return;
     }
 
-    axios
-      .post(
+    try {
+      const response = await axios.post(
         'https://api.agilementor.kr/api/projects',
         { title: projectTitle },
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
-      )
-      .then((response) => {
-        if (response.status === 201) {
-          const newProject = response.data;
-          setProjects([...projects, newProject]);
-          closeModal();
-        }
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+      );
+
+      if (response.status === 201) {
+        alert('새 프로젝트가 성공적으로 생성되었습니다.');
+        fetchProjects();
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('프로젝트 생성 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -86,7 +81,7 @@ const ProjectList = () => {
           display="flex"
           alignItems="center"
           justifyContent="space-between"
-          mb={0.5}
+          mb={0.8}
         >
           <Box display="flex" alignItems="center">
             <Box
@@ -109,15 +104,6 @@ const ProjectList = () => {
               </Typography>
             </ButtonBase>
           </Box>
-
-          <Stack direction="row" spacing={0.5}>
-            <IconButton sx={{ color: '#9e9e9e' }} aria-label="edit">
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton sx={{ color: '#e53935' }} aria-label="delete">
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Stack>
         </Box>
       ))}
 

@@ -42,7 +42,7 @@ public class Backlog {
     @Column(nullable = false)
     private String description;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Status status;
 
     @Enumerated(EnumType.STRING)

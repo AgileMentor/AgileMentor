@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import axios from 'axios';
 import { IoHome } from 'react-icons/io5';
 // eslint-disable-next-line import/no-unresolved
-import CreateProjectButton from '@components/common/NewProject/index';
+import CreateProjectButton from '@components/common/CreateProjectButton';
 // eslint-disable-next-line import/no-unresolved
 import SelectProject from '@components/common/SelectProject';
 // eslint-disable-next-line import/no-unresolved
@@ -19,44 +18,34 @@ import { useProjects } from '../../provider/projectContext';
 
 const SideBar = () => {
   const {
-    setProjects,
-    projects,
+    fetchProjects,
     selectedProjectId,
-    setSelectedProjectId,
-    members,
     fetchMembers,
+    members,
+    user,
   } = useProjects();
   const navigate = useNavigate();
 
-  // Fetch projects on component mount
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await axios.get(
-          'https://api.agilementor.kr/api/projects',
-          {
-            withCredentials: true,
-          },
-        );
-        setProjects(response.data);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        alert('프로젝트 목록을 가져오는 중 오류가 발생했습니다.');
-      }
-    };
-
     fetchProjects();
-  }, [setProjects]);
+  }, [fetchProjects]);
 
-  // Fetch members when selectedProjectId changes
   useEffect(() => {
     if (selectedProjectId) {
       fetchMembers(selectedProjectId);
-    } else {
-      // Reset members when no project is selected
-      fetchMembers(null);
     }
   }, [selectedProjectId, fetchMembers]);
+
+  useEffect(() => {
+    if (user && members.length > 0) {
+      const currentMember = members.find((member) => member.memberId === user.memberId);
+      setIsAdmin(currentMember?.isAdmin || false);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user, members]);
 
   return (
     <SidebarContainer>
@@ -64,10 +53,7 @@ const SideBar = () => {
         <CreateProjectButton />
       </CreateProjectButtonWrapper>
       <SelectProjectWrapper>
-        <SelectProject
-          projects={projects}
-          onSelectProject={(projectId) => setSelectedProjectId(projectId)}
-        />
+        <SelectProject />
       </SelectProjectWrapper>
       <DashboardLink onClick={() => navigate('/dashboard')}>
         <IoHomeIcon />
@@ -78,16 +64,18 @@ const SideBar = () => {
       </NavigateMenuWrapper>
       {selectedProjectId && (
         <MemberWrapper>
-          <Member members={members} />
+          <Member members={members} isAdmin={isAdmin} />
         </MemberWrapper>
       )}
       <DividerWrapper>
-        <SettingButtonWrapper>
-          <SettingButton onClick={() => console.log('클릭됨')} />
-        </SettingButtonWrapper>
+        {isAdmin && (
+          <SettingButtonWrapper>
+            <SettingButton />
+          </SettingButtonWrapper>
+        )}
         <Divider />
         <LogoutButtonWrapper>
-          <LogoutButton />
+          <LogoutButton members={members} projectId={selectedProjectId} />
         </LogoutButtonWrapper>
       </DividerWrapper>
     </SidebarContainer>

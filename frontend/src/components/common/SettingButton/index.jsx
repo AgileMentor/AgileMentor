@@ -1,5 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import ProjectSettingModal from '../ProjectSettingModal';
+
+const SettingButton = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  return (
+    <>
+      <Button onClick={handleOpenModal}>설정하기</Button>
+
+      {isModalOpen && (
+        <ProjectSettingModal
+          onCancel={handleCloseModal}
+        />
+      )}
+    </>
+  );
+};
+
+export default SettingButton;
 
 const Button = styled.button`
   background-color: #808080;
@@ -40,9 +62,3 @@ const Button = styled.button`
   }
 `;
 
-// eslint-disable-next-line react/prop-types
-const SettingButton = ({ onClick }) => (
-  <Button onClick={onClick}>설정하기</Button>
-);
-
-export default SettingButton;
