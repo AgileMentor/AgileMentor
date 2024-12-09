@@ -2,9 +2,12 @@ package agilementor.sprint.repository;
 
 import agilementor.project.entity.Project;
 import agilementor.sprint.entity.Sprint;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -24,4 +27,16 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
 
     // 활성 스프린트 조회
     Optional<Sprint> findByProjectAndIsActivateTrue(Project project);
+
+    // 특정 프로젝트의 isdone이 false인 모든 스프린트 조회
+    List<Sprint> findByProject_ProjectIdAndIsDoneFalse(Long projectId);
+
+    // 추가된 메서드
+    List<Sprint> findByProject_ProjectIdAndIsDoneTrue(Long projectId);
+
+    @Query("SELECT s FROM Sprint s WHERE s.project.projectId = :projectId AND (s.isActivate = true OR s.endDate = :today)")
+    Optional<Sprint> findActiveOrEndingSprint(@Param("projectId") Long projectId,
+        @Param("today") LocalDate today);
+
+    List<Sprint> findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(Long projectId);
 }
