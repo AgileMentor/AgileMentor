@@ -25,6 +25,9 @@ jobs:
       - name: application.db.properties 파일 만들기
         run: echo "${{ secrets.APPLICATION_DB_PROPERTIES }}" > ./backend/src/main/resources/application-db.properties
 
+      - name: application.chatgpt.properties 파일 만들기
+        run: echo "${{ secrets.APPLICATION_CHATGPT_PROPERTIES }}" > ./backend/src/main/resources/application-chatgpt.properties
+
       - name: gradlew 권한을 부여합니다.
         run: chmod +x ./backend/gradlew
 
