@@ -5,17 +5,14 @@ on:
     branches: [ develop ]
     paths: ['backend/**']
 
-defaults:
-  run:
-    working-directory: backend
-
 jobs:
   deploy:
     runs-on: ubuntu-22.04
     steps:
+
       - name: 레포지토리 체크아웃
         uses: actions/checkout@v3
-        
+
       - name: JDK 21을 설치합니다.
         uses: actions/setup-java@v3
         with:
@@ -23,19 +20,23 @@ jobs:
           distribution: 'corretto'
 
       - name: application.oauth.properties 파일 만들기
-        run: echo "${{ secrets.APPLICATION_OAUTH_PROPERTIES }}" > ./src/main/resources/application-oauth.properties
+        run: echo "${{ secrets.APPLICATION_OAUTH_PROPERTIES }}" > ./backend/src/main/resources/application-oauth.properties
         
       - name: application.db.properties 파일 만들기
-        run: echo "${{ secrets.APPLICATION_DB_PROPERTIES }}" > ./src/main/resources/application-db.properties
+        run: echo "${{ secrets.APPLICATION_DB_PROPERTIES }}" > ./backend/src/main/resources/application-db.properties
+
+      - name: application.chatgpt.properties 파일 만들기
+        run: echo "${{ secrets.APPLICATION_CHATGPT_PROPERTIES }}" > ./backend/src/main/resources/application-chatgpt.properties
 
       - name: gradlew 권한을 부여합니다.
-        run: chmod +x gradlew
+        run: chmod +x ./backend/gradlew
 
       - name: Gradle을 통해 빌드합니다.
+        working-directory: ./backend
         run: ./gradlew build -x test
 
       - name: 빌드된 파일 이름 변경하기
-        run: mv ./build/libs/*SNAPSHOT.jar ./agilementor.jar
+        run: mv ./backend/build/libs/*SNAPSHOT.jar ./agilementor.jar
 
       - name: SCP로 EC2에 빌드된 파일 전송하기
         uses: appleboy/scp-action@v0.1.7
