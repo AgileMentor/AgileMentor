@@ -212,7 +212,7 @@ public class SprintService {
         List<CompletedSprintData> sprintData = completedSprints.stream()
             .map(sprint -> {
                 // 해당 스프린트의 완료된 백로그 계산
-                List<Backlog> sprintBacklogs = backlogRepository.findBySprint(Optional.of(sprint));
+                List<Backlog> sprintBacklogs = backlogRepository.findBySprint(sprint);
                 long completedInSprint = sprintBacklogs.stream()
                     .filter(backlog -> backlog.getStatus() == Status.DONE)
                     .count();
@@ -243,8 +243,7 @@ public class SprintService {
 
         // 활성 스프린트 데이터 처리
         activeSprint.ifPresent(sprint -> {
-            List<Backlog> activeSprintBacklogs = backlogRepository.findBySprint(
-                Optional.of(sprint));
+            List<Backlog> activeSprintBacklogs = backlogRepository.findBySprint(sprint);
             long completedInActiveSprint = activeSprintBacklogs.stream()
                 .filter(backlog -> backlog.getStatus() == Status.DONE)
                 .count();
