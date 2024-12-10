@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.UNAUTHORIZED)
             .body(new ExceptionResponse(exception.getMessage()));
     }
-  
+
     @ExceptionHandler
     public ResponseEntity<ExceptionResponse> handleSprintNotFoundException(
         SprintNotFoundException exception) {
@@ -117,6 +117,22 @@ public class GlobalExceptionHandler {
         BacklogNotFoundException exception) {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
+            .body(new ExceptionResponse(exception.getMessage()));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ExceptionResponse> handleNotJsonResponseException(
+        NotJsonResponseException exception) {
+        return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(new ExceptionResponse(exception.getMessage()));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ExceptionResponse> handleFailedToParseException(
+        FailedToParseException exception) {
+        return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
             .body(new ExceptionResponse(exception.getMessage()));
     }
 
