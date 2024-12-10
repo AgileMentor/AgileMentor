@@ -1,6 +1,7 @@
 package agilementor.sprint.service;
 
 import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.entity.Priority;
 import agilementor.backlog.entity.Status;
 import agilementor.common.exception.EndDateNullException;
 import agilementor.common.exception.ProjectNotFoundException;
@@ -106,10 +107,10 @@ class SprintServiceTest {
             .willReturn(Optional.of(activeSprint));
 
         // 백로그 설정
-        Backlog completedBacklog = new Backlog("title", "description", Status.TODO);
+        Backlog completedBacklog = new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null);
         ReflectionTestUtils.setField(completedBacklog, "status", Status.DONE);
 
-        Backlog incompleteBacklog = new Backlog("title2", "description", Status.TODO);
+        Backlog incompleteBacklog = new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null);
         ReflectionTestUtils.setField(incompleteBacklog, "status", Status.IN_PROGRESS);
 
         given(backlogRepository.findBySprint(completedSprint))
@@ -118,8 +119,8 @@ class SprintServiceTest {
             .willReturn(List.of(completedBacklog, incompleteBacklog));
 
         List<Backlog> projectBacklogs = List.of(
-            new Backlog("Task 1", "Description", Status.DONE),
-            new Backlog("Task 2", "Description", Status.IN_PROGRESS)
+            new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null),
+            new Backlog("Task 2", "Description", Priority.MEDIUM, project, sprint, null, null)
         );
 
         given(backlogRepository.findByProject(any()))
@@ -214,8 +215,8 @@ class SprintServiceTest {
     void deleteSprint_shouldSetSprintIdToNullInBacklogs() {
         // given
         List<Backlog> backlogs = List.of(
-            new Backlog(1L, "Backlog 1", "Description 1", sprint),
-            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+            new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null),
+            new Backlog("Task 2", "Description", Priority.HIGH, project, sprint, null, null)
         );
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
         given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
@@ -236,8 +237,8 @@ class SprintServiceTest {
     void deleteSprint_shouldCallBacklogSave() {
         // given
         List<Backlog> backlogs = List.of(
-            new Backlog(1L, "Backlog 1", "Description 1", sprint),
-            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+            new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null),
+            new Backlog("Task 2", "Description", Priority.HIGH, project, sprint, null, null)
         );
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
         given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
@@ -255,8 +256,8 @@ class SprintServiceTest {
     void deleteSprint_shouldDeleteSprint() {
         // given
         List<Backlog> backlogs = List.of(
-            new Backlog(1L, "Backlog 1", "Description 1", sprint),
-            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+            new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null),
+            new Backlog("Task 2", "Description", Priority.HIGH, project, sprint, null, null)
         );
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
         given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
@@ -359,8 +360,7 @@ class SprintServiceTest {
     void completeSprint() {
         // given
         // Mock 데이터 생성
-        Backlog backlog = new Backlog("title3", "description", Status.IN_PROGRESS);
-        backlog.setSprint(sprint);
+        Backlog backlog = new Backlog("Task 1", "Description", Priority.HIGH, project, sprint, null, null);
 
         // given
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))

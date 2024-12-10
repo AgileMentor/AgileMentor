@@ -63,12 +63,6 @@ public class Backlog {
         this.assignee = assignee;
     }
 
-    public Backlog(String s, String description, Status status) {
-    }
-
-    public Backlog(long l, String s, String s1, Sprint sprint) {
-    }
-
     public Long getBacklogId() {
         return backlogId;
     }
