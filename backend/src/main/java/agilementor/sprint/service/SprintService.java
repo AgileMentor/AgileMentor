@@ -128,6 +128,13 @@ public class SprintService {
             .orElseThrow(ProjectNotFoundException::new);
         // 스프린트 조회
         Sprint sprint = validateSprintExists(projectId, sprintId);
+
+        // 스프린트에 연관된 백로그 조회 및 스프린트와의 연관 해제
+        List<Backlog> backlogs = backlogRepository.findBySprint(sprint);
+        for (Backlog backlog : backlogs) {
+            backlog.setSprint(null); // Sprint와의 연관 해제
+            backlogRepository.save(backlog); // 변경사항 저장
+        }
         sprintRepository.delete(sprint);
     }
 

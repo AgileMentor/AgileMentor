@@ -17,6 +17,7 @@ import agilementor.sprint.dto.SprintResponse;
 import agilementor.sprint.entity.Sprint;
 import agilementor.sprint.repository.SprintRepository;
 import agilementor.backlog.repository.BacklogRepository;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 
@@ -204,6 +207,95 @@ class SprintServiceTest {
 
         // then
         then(sprintRepository).should().delete(any(Sprint.class));
+    }
+
+    @Test
+    @DisplayName("스프린트를 삭제하기 전에 연관된 백로그의 sprintId를 null로 설정한다.")
+    void deleteSprint_shouldSetSprintIdToNullInBacklogs() {
+        // given
+        List<Backlog> backlogs = List.of(
+            new Backlog(1L, "Backlog 1", "Description 1", sprint),
+            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+        );
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
+        given(backlogRepository.findBySprint(sprint)).willReturn(backlogs);
+
+        // when
+        sprintService.deleteSprint(memberId, projectId, sprintId);
+
+        // then
+        for (Backlog backlog : backlogs) {
+            assertNull(backlog.getSprint(), "Backlog's sprint should be null after deletion.");
+        }
+        then(backlogRepository).should(times(backlogs.size())).save(any(Backlog.class));
+    }
+
+    @Test
+    @DisplayName("백로그 저장을 호출한다.")
+    void deleteSprint_shouldCallBacklogSave() {
+        // given
+        List<Backlog> backlogs = List.of(
+            new Backlog(1L, "Backlog 1", "Description 1", sprint),
+            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+        );
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
+        given(backlogRepository.findBySprint(sprint)).willReturn(backlogs);
+
+        // when
+        sprintService.deleteSprint(memberId, projectId, sprintId);
+
+        // then
+        then(backlogRepository).should(times(backlogs.size())).save(any(Backlog.class));
+    }
+
+    @Test
+    @DisplayName("스프린트를 삭제한다.")
+    void deleteSprint_shouldDeleteSprint() {
+        // given
+        List<Backlog> backlogs = List.of(
+            new Backlog(1L, "Backlog 1", "Description 1", sprint),
+            new Backlog(2L, "Backlog 2", "Description 2", sprint)
+        );
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
+        given(backlogRepository.findBySprint(sprint)).willReturn(backlogs);
+
+        // when
+        sprintService.deleteSprint(memberId, projectId, sprintId);
+
+        // then
+        then(sprintRepository).should().delete(sprint);
+    }
+
+    @Test
+    @DisplayName("연결된 백로그가 없는 경우에도 스프린트를 정상적으로 삭제한다.")
+    void deleteSprint_shouldHandleNoBacklogs() {
+        // given
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
+        given(backlogRepository.findBySprint(sprint)).willReturn(Collections.emptyList());
+
+        // when
+        sprintService.deleteSprint(memberId, projectId, sprintId);
+
+        // then
+        then(backlogRepository).should(never()).save(any(Backlog.class));
+        then(sprintRepository).should().delete(sprint);
+    }
+
+    @Test
+    @DisplayName("스프린트를 찾을 수 없을 때 예외를 발생시킨다.")
+    void deleteSprint_shouldThrowExceptionIfSprintNotFound() {
+        // given
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.empty());
+
+        // when & then
+        assertThrows(SprintNotFoundException.class, () ->
+            sprintService.deleteSprint(memberId, projectId, sprintId)
+        );
     }
 
     @Test
