@@ -41,7 +41,7 @@ public class GPTService {
     private final SprintRepository sprintRepository;
     private final WebClient webClient;
 
-    @Value("${openai.api.key}")
+    @Value("${openai.api.key:@null}")
     private String apiKey;
 
     public GPTService(StoryRepository storyRepository, BacklogRepository backlogRepository,
