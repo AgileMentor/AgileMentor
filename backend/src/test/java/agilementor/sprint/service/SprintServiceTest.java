@@ -103,15 +103,15 @@ class SprintServiceTest {
             .willReturn(Optional.of(activeSprint));
 
         // 백로그 설정
-        Backlog completedBacklog = new Backlog();
+        Backlog completedBacklog = new Backlog("title", "description", Status.TODO);
         ReflectionTestUtils.setField(completedBacklog, "status", Status.DONE);
 
-        Backlog incompleteBacklog = new Backlog();
+        Backlog incompleteBacklog = new Backlog("title2", "description", Status.TODO);
         ReflectionTestUtils.setField(incompleteBacklog, "status", Status.IN_PROGRESS);
 
-        given(backlogRepository.findBySprint(Optional.of(completedSprint)))
+        given(backlogRepository.findBySprint(completedSprint))
             .willReturn(List.of(completedBacklog));
-        given(backlogRepository.findBySprint(Optional.of(activeSprint)))
+        given(backlogRepository.findBySprint(activeSprint))
             .willReturn(List.of(completedBacklog, incompleteBacklog));
 
         List<Backlog> projectBacklogs = List.of(
@@ -267,10 +267,7 @@ class SprintServiceTest {
     void completeSprint() {
         // given
         // Mock 데이터 생성
-        Backlog backlog = new Backlog();
-        backlog.setId(1L);
-        backlog.setTitle("Test Backlog");
-        backlog.setStatus(Status.IN_PROGRESS);
+        Backlog backlog = new Backlog("title3", "description", Status.IN_PROGRESS);
         backlog.setSprint(sprint);
 
         // given
