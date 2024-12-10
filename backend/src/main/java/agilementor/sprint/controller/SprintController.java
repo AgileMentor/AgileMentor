@@ -1,9 +1,11 @@
 package agilementor.sprint.controller;
 
+import agilementor.sprint.dto.CompletedSprintData;
 import agilementor.sprint.dto.SprintForm;
 import agilementor.sprint.dto.SprintResponse;
 import agilementor.sprint.service.SprintService;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.SessionAttribute;
 
@@ -26,6 +29,7 @@ public class SprintController {
 
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public SprintResponse createSprint(
         @SessionAttribute(name = "memberId", required = false) Long memberId,
         @PathVariable Long projectId) {
@@ -55,6 +59,7 @@ public class SprintController {
     }
 
     @DeleteMapping("/{sprintId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteSprint(@SessionAttribute(name = "memberId", required = false) Long memberId,
         @PathVariable Long projectId, @PathVariable Long sprintId) {
         sprintService.deleteSprint(memberId, projectId, sprintId);
@@ -75,5 +80,12 @@ public class SprintController {
         @PathVariable Long projectId,
         @PathVariable Long sprintId) {
         return sprintService.completeSprint(memberId, projectId, sprintId);
+    }
+
+    @GetMapping("/burndown")
+    public List<CompletedSprintData> getBurndownData(
+        @SessionAttribute(name = "memberId", required = false) Long memberId,
+        @PathVariable Long projectId) {
+        return sprintService.getBurndownData(memberId, projectId);
     }
 }

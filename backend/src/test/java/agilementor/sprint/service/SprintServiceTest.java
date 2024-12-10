@@ -1,5 +1,7 @@
 package agilementor.sprint.service;
 
+import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.entity.Status;
 import agilementor.common.exception.EndDateNullException;
 import agilementor.common.exception.ProjectNotFoundException;
 import agilementor.common.exception.SprintNotFoundException;
@@ -9,10 +11,12 @@ import agilementor.project.entity.Project;
 import agilementor.project.entity.ProjectMember;
 import agilementor.project.repository.ProjectMemberRepository;
 import agilementor.project.repository.ProjectRespository;
+import agilementor.sprint.dto.CompletedSprintData;
 import agilementor.sprint.dto.SprintForm;
 import agilementor.sprint.dto.SprintResponse;
 import agilementor.sprint.entity.Sprint;
 import agilementor.sprint.repository.SprintRepository;
+import agilementor.backlog.repository.BacklogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,9 @@ class SprintServiceTest {
 
     @Mock
     private SprintRepository sprintRepository;
+
+    @Mock
+    private BacklogRepository backlogRepository;
 
     @Mock
     private ProjectRespository projectRepository;
@@ -61,9 +68,59 @@ class SprintServiceTest {
 
         sprint = new Sprint(project, "Sprint 1");
         ReflectionTestUtils.setField(sprint, "id", sprintId);
+        ReflectionTestUtils.setField(sprint, "endDate", LocalDate.now()); // 활성 스프린트 종료일
 
-        projectMember = new ProjectMember(project, new Member("test@example.com", "Test User", "pic.jpg"), true);
-        ReflectionTestUtils.setField(projectMember.getMember(), "memberId", memberId);
+        Member mockedMember = mock(Member.class);
+        ReflectionTestUtils.setField(mockedMember, "memberId", memberId);
+        given(mockedMember.getEmail()).willReturn("test@example.com");
+        given(mockedMember.getName()).willReturn("Test User");
+
+        projectMember = new ProjectMember(project, mockedMember, true);
+
+        // Mock 리포지토리 동작
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))
+            .willReturn(Optional.of(projectMember));
+        given(projectRepository.findById(any()))
+            .willReturn(Optional.of(project));
+
+        // 완료된 스프린트 설정
+        Sprint completedSprint = new Sprint(project, "Completed Sprint");
+        ReflectionTestUtils.setField(completedSprint, "id", 1L);
+        ReflectionTestUtils.setField(completedSprint, "startDate", LocalDate.of(2024, 1, 1));
+        ReflectionTestUtils.setField(completedSprint, "endDate", LocalDate.of(2024, 2, 1));
+
+        // 활성 스프린트 설정
+        Sprint activeSprint = new Sprint(project, "Active Sprint");
+        ReflectionTestUtils.setField(activeSprint, "id", 2L);
+        ReflectionTestUtils.setField(activeSprint, "startDate", LocalDate.of(2024, 2, 2));
+        ReflectionTestUtils.setField(activeSprint, "endDate", LocalDate.now()); // 오늘 날짜로 설정
+
+        // Mock 데이터 저장
+        given(projectRepository.findById(any())).willReturn(Optional.of(project));
+        given(sprintRepository.findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(any()))
+            .willReturn(List.of(completedSprint));
+        given(sprintRepository.findByProjectAndIsActivateTrue(any()))
+            .willReturn(Optional.of(activeSprint));
+
+        // 백로그 설정
+        Backlog completedBacklog = new Backlog();
+        ReflectionTestUtils.setField(completedBacklog, "status", Status.DONE);
+
+        Backlog incompleteBacklog = new Backlog();
+        ReflectionTestUtils.setField(incompleteBacklog, "status", Status.IN_PROGRESS);
+
+        given(backlogRepository.findBySprint(Optional.of(completedSprint)))
+            .willReturn(List.of(completedBacklog));
+        given(backlogRepository.findBySprint(Optional.of(activeSprint)))
+            .willReturn(List.of(completedBacklog, incompleteBacklog));
+
+        List<Backlog> projectBacklogs = List.of(
+            new Backlog("Task 1", "Description", Status.DONE),
+            new Backlog("Task 2", "Description", Status.IN_PROGRESS)
+        );
+
+        given(backlogRepository.findByProject(any()))
+            .willReturn(projectBacklogs);
     }
 
     @Test
@@ -84,19 +141,25 @@ class SprintServiceTest {
     }
 
     @Test
-    @DisplayName("프로젝트 ID로 모든 스프린트를 조회한다.")
+    @DisplayName("프로젝트 ID로 isDone이 false인 모든 스프린트를 조회한다.")
     void getAllSprints() {
         // given
-        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
-        given(sprintRepository.findByProject_ProjectId(any())).willReturn(List.of(sprint));
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))
+            .willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndIsDoneFalse(any()))
+            .willReturn(List.of(sprint));
 
         // when
         List<SprintResponse> responseList = sprintService.getAllSprints(memberId, projectId);
 
         // then
         assertThat(responseList).hasSize(1);
-        assertThat(responseList.get(0).title()).isEqualTo("Sprint 1");
+        assertThat(responseList.get(0).title()).isEqualTo(sprint.getTitle());
+        assertThat(responseList.get(0).isDone()).isFalse();
+        then(sprintRepository).should().findByProject_ProjectIdAndIsDoneFalse(projectId);
+        then(projectMemberRepository).should().findByMemberIdAndProjectId(memberId, projectId);
     }
+
 
     @Test
     @DisplayName("스프린트 ID로 스프린트를 조회한다.")
@@ -203,8 +266,20 @@ class SprintServiceTest {
     @DisplayName("스프린트를 완료한다.")
     void completeSprint() {
         // given
-        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any())).willReturn(Optional.of(projectMember));
-        given(sprintRepository.findByProject_ProjectIdAndId(any(), any())).willReturn(Optional.of(sprint));
+        // Mock 데이터 생성
+        Backlog backlog = new Backlog();
+        backlog.setId(1L);
+        backlog.setTitle("Test Backlog");
+        backlog.setStatus(Status.IN_PROGRESS);
+        backlog.setSprint(sprint);
+
+        // given
+        given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))
+            .willReturn(Optional.of(projectMember));
+        given(sprintRepository.findByProject_ProjectIdAndId(any(), any()))
+            .willReturn(Optional.of(sprint));
+        given(backlogRepository.findBySprint_IdAndStatusNot(any(), eq(Status.DONE)))
+            .willReturn(List.of(backlog)); // isDone이 false인 백로그를 반환
         given(sprintRepository.save(any(Sprint.class))).willReturn(sprint);
 
         // when
@@ -212,7 +287,13 @@ class SprintServiceTest {
 
         // then
         assertThat(response.isDone()).isTrue();
+        then(projectMemberRepository).should().findByMemberIdAndProjectId(memberId, projectId);
+        then(sprintRepository).should().findByProject_ProjectIdAndId(projectId, sprintId);
+        then(backlogRepository).should().findBySprint_IdAndStatusNot(sprintId, Status.DONE);
+        then(backlogRepository).should().save(any(Backlog.class)); // 변경된 백로그 저장 검증
+        then(sprintRepository).should().save(any(Sprint.class)); // 스프린트 완료 상태 저장 검증
     }
+
 
     @Test
     @DisplayName("프로젝트가 없으면 예외를 발생시킨다.")
@@ -235,6 +316,98 @@ class SprintServiceTest {
         // when & then
         assertThatThrownBy(() -> sprintService.getSprintById(memberId, projectId, sprintId))
             .isInstanceOf(SprintNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("스프린트 번다운 데이터를 반환한다.")
+    void getBurndownData() {
+        // when
+        List<CompletedSprintData> response = sprintService.getBurndownData(memberId, projectId);
+
+        // then
+        assertThat(response).hasSize(2);
+
+        // 완료된 스프린트 검증
+        CompletedSprintData completedSprint = response.get(0);
+        assertThat(completedSprint.getSprintId()).isEqualTo(1L); // 확인
+        assertThat(completedSprint.getStartDate()).isEqualTo(LocalDate.of(2024, 1, 1));
+        assertThat(completedSprint.getEndDate()).isEqualTo(LocalDate.of(2024, 2, 1));
+        assertThat(completedSprint.getCompletedInSprint()).isEqualTo(1);
+        assertThat(completedSprint.getRemainingBacklogs()).isEqualTo(1);
+
+        // 활성 스프린트 검증
+        CompletedSprintData activeSprint = response.get(1);
+        assertThat(activeSprint.getSprintId()).isEqualTo(2L); // 확인
+        assertThat(activeSprint.getStartDate()).isEqualTo(LocalDate.of(2024, 2, 2));
+        assertThat(activeSprint.getEndDate()).isEqualTo(LocalDate.now());
+        assertThat(activeSprint.getCompletedInSprint()).isEqualTo(1);
+        assertThat(activeSprint.getRemainingBacklogs()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("활성 스프린트가 없을 때 번다운 데이터를 반환한다.")
+    void getBurndownData_NoActiveSprint() {
+        // given
+        given(sprintRepository.findByProjectAndIsActivateTrue(any()))
+            .willReturn(Optional.empty()); // 활성 스프린트 없음
+
+        // when
+        List<CompletedSprintData> response = sprintService.getBurndownData(memberId, projectId);
+
+        // then
+        assertThat(response).hasSize(1); // 완료된 스프린트만 반환
+
+        CompletedSprintData completedSprint = response.get(0);
+        assertThat(completedSprint.getSprintId()).isEqualTo(1L); // 완료된 스프린트 ID
+        assertThat(completedSprint.getRemainingBacklogs()).isEqualTo(1); // 남은 백로그 수
+        assertThat(completedSprint.getCompletedInSprint()).isEqualTo(1); // 완료된 백로그 수
+    }
+
+    @Test
+    @DisplayName("완료된 스프린트가 없을 때 번다운 데이터를 반환한다.")
+    void getBurndownData_NoCompletedSprints() {
+        // given
+        given(sprintRepository.findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(any()))
+            .willReturn(List.of()); // 완료된 스프린트 없음
+
+        // when
+        List<CompletedSprintData> response = sprintService.getBurndownData(memberId, projectId);
+
+        // then
+        assertThat(response).hasSize(1); // 활성 스프린트만 반환
+
+        CompletedSprintData activeSprint = response.get(0);
+        assertThat(activeSprint.getSprintId()).isEqualTo(2L); // 활성 스프린트 ID
+        assertThat(activeSprint.getRemainingBacklogs()).isEqualTo(1); // 남은 백로그 수
+        assertThat(activeSprint.getCompletedInSprint()).isEqualTo(1); // 완료된 백로그 수
+    }
+
+    @Test
+    @DisplayName("프로젝트가 없을 때 ProjectNotFoundException을 반환한다.")
+    void getBurndownData_ProjectNotFound() {
+        // given
+        given(projectRepository.findById(any()))
+            .willThrow(new ProjectNotFoundException());
+
+        // when & then
+        assertThatThrownBy(() -> sprintService.getBurndownData(memberId, projectId))
+            .isInstanceOf(ProjectNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("활성 스프린트와 완료된 스프린트가 없을 때 빈 데이터를 반환한다.")
+    void getBurndownData_NoSprints() {
+        // given
+        given(sprintRepository.findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(any()))
+            .willReturn(List.of()); // 완료된 스프린트 없음
+        given(sprintRepository.findByProjectAndIsActivateTrue(any()))
+            .willReturn(Optional.empty()); // 활성 스프린트 없음
+
+        // when
+        List<CompletedSprintData> response = sprintService.getBurndownData(memberId, projectId);
+
+        // then
+        assertThat(response).isEmpty(); // 스프린트 데이터 없음
     }
 }
 
