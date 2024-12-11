@@ -6,7 +6,6 @@ import Story from '@components/common/Story/index';
 import Sprint from '@components/common/Sprint/index';
 // eslint-disable-next-line import/no-unresolved
 import Backlog from '@components/common/Backlog/index';
-import axios from 'axios';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
@@ -17,10 +16,10 @@ const BacklogAndSprintPage = () => {
     fetchBacklogs,
     backlogs,
     sprints,
+    user,
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
-  const [memberId, setMemberId] = useState(null);
   const [sprintItems, setSprintItems] = useState([]);
   const [backlogItems, setBacklogItems] = useState([]);
 
@@ -28,31 +27,12 @@ const BacklogAndSprintPage = () => {
     projects.find((project) => project.projectId === selectedProjectId)
       ?.title || '프로젝트 선택하기';
 
-  // 사용자 memberId를 API로 가져오기
-  useEffect(() => {
-    const fetchMemberId = async () => {
-      try {
-        const response = await axios.get(
-          'https://api.agilementor.kr/api/members',
-          {
-            withCredentials: true,
-          },
-        );
-        setMemberId(response.data.memberId);
-      } catch (error) {
-        console.error('사용자 ID 가져오기 실패:', error);
-      }
-    };
-
-    fetchMemberId();
-  }, []);
-
   useEffect(() => {
     if (selectedProjectId) {
       fetchSprints(selectedProjectId);
       fetchBacklogs(selectedProjectId);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, fetchSprints, fetchBacklogs]);
 
   useEffect(() => {
     if (backlogs.length) {
@@ -61,7 +41,7 @@ const BacklogAndSprintPage = () => {
   }, [backlogs]);
 
   const filteredBacklogs = showOnlyMyTasks
-    ? backlogItems?.filter((backlog) => backlog.memberId === memberId)
+    ? backlogItems?.filter((backlog) => backlog.memberId === user?.memberId)
     : backlogItems;
 
   return (
@@ -104,7 +84,7 @@ const BacklogAndSprintPage = () => {
                   sprintItems={sprint.items}
                   setSprintItems={setSprintItems}
                   showOnlyMyTasks={showOnlyMyTasks}
-                  memberId={memberId}
+                  memberId={user?.memberId}
                 />
               ))}
             </SprintContainer>
