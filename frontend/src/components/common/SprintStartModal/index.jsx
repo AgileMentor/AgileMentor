@@ -1,15 +1,49 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers';
 
-const SprintStartModal = ({ onCancel, onConfirm }) => {
+const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [sprintName, setSprintName] = useState('');
   const [sprintGoal, setSprintGoal] = useState('');
+
+  const handleConfirm = async () => {
+    if (!sprintName || !sprintGoal || !endDate) {
+      alert('스프린트 이름, 목표 및 종료 날짜를 모두 입력해주세요.');
+      return;
+    }
+
+    const formattedEndDate = endDate.toISOString().split('T')[0];
+
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}/start`,
+        {
+          title: sprintName,
+          goal: sprintGoal,
+          endDate: formattedEndDate,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 200) {
+        alert('스프린트가 성공적으로 시작되었습니다.');
+        fetchSprints();
+      }
+
+      onCancel();
+    } catch (error) {
+      console.error('스프린트 시작 중 오류:', error);
+      alert('스프린트를 시작하는 데 실패했습니다.');
+    }
+  };
 
   return (
     <ModalOverlay>
@@ -60,7 +94,7 @@ const SprintStartModal = ({ onCancel, onConfirm }) => {
 
         <ButtonContainer>
           <CancelButton onClick={onCancel}>취소</CancelButton>
-          <ConfirmButton onClick={onConfirm}>완료</ConfirmButton>
+          <ConfirmButton onClick={handleConfirm}>완료</ConfirmButton>
         </ButtonContainer>
       </ModalContainer>
     </ModalOverlay>
@@ -69,7 +103,9 @@ const SprintStartModal = ({ onCancel, onConfirm }) => {
 
 SprintStartModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
+  projectId: PropTypes.number.isRequired,
+  sprintId: PropTypes.number.isRequired,
+  fetchSprints: PropTypes.func.isRequired,
 };
 
 export default SprintStartModal;
