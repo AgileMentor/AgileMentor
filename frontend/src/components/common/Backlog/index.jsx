@@ -1,38 +1,223 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { FaTrash } from 'react-icons/fa';
+import { useDrop } from 'react-dnd';
 // eslint-disable-next-line import/no-unresolved
 import BacklogBar from '@components/common/BacklogBar/index';
+import axios from 'axios';
+// eslint-disable-next-line import/no-unresolved
+import NewBacklogModal from '@components/common/NewBacklogModal/index';
+// eslint-disable-next-line import/no-unresolved
+import BacklogModal from '@components/common/BacklogModal/index';
+// eslint-disable-next-line import/no-unresolved
+import Sprint from '@components/common/Sprint';
+import { useProjects } from '../../../provider/projectContext';
 
-const Backlog = () => (
-  <BacklogContainer>
-    <Header>
-      <HeaderLeft>
-        <HeaderTitle>백로그</HeaderTitle>
-        <DeleteButton>
-          <FaTrash style={{ marginRight: '4px' }} />
-          삭제
-        </DeleteButton>
-      </HeaderLeft>
-      <CreateButton>스프린트 만들기</CreateButton>
-    </Header>
-    <BacklogContent>
-      {Array.from({ length: 10 }, (_, index) => (
-        <BacklogBar key={index} />
+const Backlog = ({
+  backlogItems,
+  setBacklogItems,
+  setSprintItems,
+  sprints = [],
+}) => {
+  const {
+    selectedProjectId,
+    fetchMembers,
+    fetchSprints,
+    fetchBacklogs,
+    members,
+  } = useProjects();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBacklog, setSelectedBacklog] = useState(null);
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchMembers(selectedProjectId);
+    }
+  }, [selectedProjectId, fetchMembers]);
+
+  const createSprint = async () => {
+    if (!selectedProjectId) {
+      alert('선택된 프로젝트가 없습니다.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints`,
+        {},
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 201) {
+        fetchSprints(selectedProjectId);
+      }
+    } catch (error) {
+      console.error('스프린트 생성 중 오류 발생:', error);
+      alert('스프린트 생성에 실패했습니다.');
+    }
+  };
+
+  const deleteBacklog = async (backlogId) => {
+    if (!selectedProjectId || !backlogId) {
+      alert('프로젝트 또는 백로그 정보가 없습니다.');
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 204) {
+        alert('백로그가 성공적으로 삭제되었습니다.');
+        fetchBacklogs(selectedProjectId);
+      }
+    } catch (error) {
+      console.error('백로그 삭제 중 오류 발생:', error);
+      alert('백로그 삭제에 실패했습니다.');
+    }
+  };
+
+  const moveToBacklog = async (item) => {
+    const updatedBacklog = { ...item, sprintId: null };
+
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${item.id}`,
+        updatedBacklog,
+        { withCredentials: true },
+      );
+
+      if (response.status === 200) {
+        fetchBacklogs(selectedProjectId);
+        fetchSprints(selectedProjectId);
+      }
+    } catch (error) {
+      console.error('백로그 이동 중 오류 발생:', error);
+      alert('백로그를 스프린트로 이동하는 데 실패했습니다.');
+    }
+  };
+
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'BACKLOG_ITEM',
+    drop: (item) => moveToBacklog(item),
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  }));
+
+  const noSprintBacklogs = backlogItems.filter(
+    (item) => item.sprintId === null || item.sprintId === undefined,
+  );
+
+  return (
+    <>
+      <BacklogContainer ref={drop} isOver={isOver}>
+        <Header>
+          <HeaderLeft>
+            <HeaderTitle>백로그</HeaderTitle>
+          </HeaderLeft>
+          <CreateButton onClick={createSprint}>스프린트 만들기</CreateButton>
+        </Header>
+        <BacklogContent>
+          {noSprintBacklogs.map((item) => (
+            <BacklogBar
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              priority={item.priority}
+              status={item.status}
+              memberId={item.memberId}
+              projectId={selectedProjectId}
+              fetchBacklogs={fetchBacklogs}
+              description={item.description}
+              onDelete={deleteBacklog}
+              onClick={(data) => {
+                setSelectedBacklog(data);
+              }}
+            />
+          ))}
+          <AddTask onClick={() => setIsModalOpen(true)}>+ 작업 만들기</AddTask>
+        </BacklogContent>
+      </BacklogContainer>
+
+      {sprints.map((sprint) => (
+        <Sprint
+          key={sprint.id}
+          sprintId={sprint.id}
+          sprintItems={backlogItems.filter(
+            (item) => item.sprintId === sprint.id,
+          )}
+          setSprintItems={setSprintItems}
+          setBacklogItems={setBacklogItems}
+          fetchSprints={fetchSprints}
+          title={sprint.title}
+        />
       ))}
-      <AddTask>+ 작업 만들기</AddTask>
-    </BacklogContent>
-  </BacklogContainer>
-);
+
+      {isModalOpen && (
+        <NewBacklogModal
+          onCancel={() => setIsModalOpen(false)}
+          onConfirm={() => {
+            setIsModalOpen(false);
+            fetchBacklogs(selectedProjectId);
+          }}
+          assignees={members}
+          projectId={selectedProjectId}
+        />
+      )}
+      {selectedBacklog && (
+        <BacklogModal
+          backlog={selectedBacklog}
+          members={members}
+          onCancel={() => setSelectedBacklog(null)}
+          fetchBacklogs={fetchBacklogs}
+        />
+      )}
+    </>
+  );
+};
+
+Backlog.propTypes = {
+  backlogItems: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      title: PropTypes.string.isRequired,
+      priority: PropTypes.string,
+      status: PropTypes.string,
+      sprintId: PropTypes.number,
+    }),
+  ).isRequired,
+  setBacklogItems: PropTypes.func.isRequired,
+  setSprintItems: PropTypes.func.isRequired,
+  sprints: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      title: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+};
 
 export default Backlog;
 
-// Styled Components
 const BacklogContainer = styled.div`
-  background-color: #ffffff;
+  background-color: ${(props) => (props.isOver ? '#e6f7ff' : '#ffffff')};
+  border: ${(props) => (props.isOver ? '2px dashed #80a7f0' : 'none')};
   border-radius: 8px;
   padding: 1rem;
   height: 30vh;
+  box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.1);
   overflow-y: auto;
 `;
 
@@ -53,24 +238,6 @@ const HeaderTitle = styled.h2`
   font-size: 1.2rem;
   font-weight: bold;
   color: #333;
-`;
-
-const DeleteButton = styled.button`
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #ff6b6b;
-  background: none;
-  border: none;
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  svg {
-    font-size: 0.8rem;
-  }
 `;
 
 const CreateButton = styled.button`

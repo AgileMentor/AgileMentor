@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { FaUser, FaListUl, FaPlus } from 'react-icons/fa';
+import { useDrag } from 'react-dnd';
 
-const SprintBar = () => {
+// eslint-disable-next-line react/prop-types
+const SprintBar = ({ id, name }) => {
   const [priority, setPriority] = useState('중');
+
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'SPRINT_ITEM',
+    item: { id, name },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }));
 
   const handlePriorityChange = () => {
     setPriority((prev) => {
@@ -14,7 +24,7 @@ const SprintBar = () => {
   };
 
   return (
-    <BarContainer>
+    <BarContainer ref={drag} isDragging={isDragging}>
       <LeftSection>
         <IconWrapper>
           <FaListUl />
@@ -46,10 +56,12 @@ const BarContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #eff5ff;
+  background-color: ${(props) => (props.isDragging ? '#d3e9ff' : '#eff5ff')};
   padding: 0.8rem 1rem;
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  opacity: ${(props) => (props.isDragging ? 0.5 : 1)};
 `;
 
 const LeftSection = styled.div`

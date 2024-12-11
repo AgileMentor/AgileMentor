@@ -1,55 +1,58 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers';
+import axios from 'axios';
 
-const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [sprintName, setSprintName] = useState('');
-  const [sprintGoal, setSprintGoal] = useState('');
+const SprintSettingModal = ({
+  onCancel,
+  initialData,
+  onSave,
+  projectId,
+  sprintId,
+}) => {
+  const [sprintName, setSprintName] = useState(initialData.title || '');
+  const [sprintGoal, setSprintGoal] = useState(initialData.goal || '');
+  const [startDate] = useState(new Date(initialData.startDate) || null);
+  const [endDate, setEndDate] = useState(new Date(initialData.endDate) || null);
 
-  const handleConfirm = async () => {
+  const handleSave = async () => {
     if (!sprintName || !sprintGoal || !endDate) {
       alert('스프린트 이름, 목표 및 종료 날짜를 모두 입력해주세요.');
       return;
     }
 
-    const formattedEndDate = endDate.toISOString().split('T')[0];
+    const updatedData = {
+      title: sprintName,
+      goal: sprintGoal,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
 
     try {
-      const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}/start`,
-        {
-          title: sprintName,
-          goal: sprintGoal,
-          endDate: formattedEndDate,
-        },
+      await axios.put(
+        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}`,
+        updatedData,
         {
           withCredentials: true,
         },
       );
-
-      if (response.status === 200) {
-        alert('스프린트가 성공적으로 시작되었습니다.');
-        fetchSprints();
-      }
-
+      alert('스프린트가 성공적으로 수정되었습니다.');
+      onSave(updatedData);
       onCancel();
     } catch (error) {
-      console.error('스프린트 시작 중 오류:', error);
-      alert('스프린트를 시작하는 데 실패했습니다.');
+      console.error('스프린트 수정 중 오류 발생:', error);
+      alert('스프린트를 수정하는 데 실패했습니다.');
     }
   };
 
   return (
     <ModalOverlay>
       <ModalContainer>
-        <ModalTitle>스프린트 시작</ModalTitle>
-        <Subtitle>새로운 스프린트를 시작합니다.</Subtitle>
+        <ModalTitle>스프린트 수정</ModalTitle>
+        <Subtitle>스프린트 정보를 수정합니다.</Subtitle>
 
         <InputContainer>
           <Label>스프린트 이름</Label>
@@ -67,7 +70,9 @@ const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
               <DatePicker
                 label="시작 날짜"
                 value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
+                readOnly // 수정 불가능
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                renderInput={(params) => <StyledInput {...params} disabled />}
               />
             </LocalizationProvider>
           </DatePickerContainer>
@@ -94,21 +99,27 @@ const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
 
         <ButtonContainer>
           <CancelButton onClick={onCancel}>취소</CancelButton>
-          <ConfirmButton onClick={handleConfirm}>완료</ConfirmButton>
+          <SaveButton onClick={handleSave}>저장</SaveButton>
         </ButtonContainer>
       </ModalContainer>
     </ModalOverlay>
   );
 };
 
-SprintStartModal.propTypes = {
+SprintSettingModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    title: PropTypes.string,
+    goal: PropTypes.string,
+    startDate: PropTypes.string,
+    endDate: PropTypes.string,
+  }).isRequired,
+  onSave: PropTypes.func.isRequired,
   projectId: PropTypes.number.isRequired,
   sprintId: PropTypes.number.isRequired,
-  fetchSprints: PropTypes.func.isRequired,
 };
 
-export default SprintStartModal;
+export default SprintSettingModal;
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -208,7 +219,7 @@ const CancelButton = styled.button`
   }
 `;
 
-const ConfirmButton = styled.button`
+const SaveButton = styled.button`
   background-color: #007bff;
   color: #fff;
   border: none;

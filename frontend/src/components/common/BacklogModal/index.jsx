@@ -1,25 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import axios from 'axios';
 
-const BacklogModal = ({
-  onCancel,
-  onConfirm,
-  initialPriority,
-  initialStatus,
-  initialAssignee,
-  assignees,
-  initialStory,
-  stories,
-  initialDescription,
-  initialModalTitle,
-}) => {
-  const [modalTitle, setModalTitle] = useState(initialModalTitle || '백로그 이름');
-  const [story, setStory] = useState(initialStory || '');
-  const [description, setDescription] = useState(initialDescription || '');
-  const [assignee, setAssignee] = useState(initialAssignee || '');
-  const [priority, setPriority] = useState(initialPriority || '');
-  const [status, setStatus] = useState(initialStatus || '');
+const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
+  const [modalTitle, setModalTitle] = useState('');
+  const [story, setStory] = useState('');
+  const [description, setDescription] = useState('');
+  const [assignee, setAssignee] = useState('');
+  const [priority, setPriority] = useState('');
+  const [status, setStatus] = useState('');
+
+  useEffect(() => {
+    if (backlog) {
+      setModalTitle(backlog.title || '백로그 이름');
+      setStory(backlog.storyId || '');
+      setDescription(backlog.description || '');
+      setAssignee(backlog.memberId || '');
+      setPriority(backlog.priority?.toLowerCase() || 'medium');
+      setStatus(backlog.status?.toLowerCase() || 'todo');
+    }
+  }, [backlog]);
+
+  const handleConfirm = async () => {
+    if (!modalTitle || !priority || !status) {
+      alert('모든 필수 값을 입력하세요!');
+      return;
+    }
+
+    const formattedStatus = {
+      todo: 'TODO',
+      inprogress: 'IN_PROGRESS',
+      done: 'DONE',
+    }[status];
+
+    const formattedPriority = priority.toUpperCase();
+
+    const dataToSend = {
+      title: modalTitle,
+      description,
+      priority: formattedPriority,
+      status: formattedStatus,
+      storyId: story || null,
+      memberId: assignee || null,
+      sprintId: backlog.sprintId || null,
+    };
+
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${backlog.projectId}/backlogs/${backlog.backlogId}`,
+        dataToSend,
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 200) {
+        alert('백로그가 성공적으로 업데이트되었습니다.');
+        fetchBacklogs(backlog.projectId);
+        onCancel();
+      }
+    } catch (error) {
+      console.error('백로그 업데이트 중 오류 발생:', error);
+      alert('백로그 업데이트에 실패했습니다.');
+    }
+  };
 
   return (
     <ModalOverlay>
@@ -34,18 +82,6 @@ const BacklogModal = ({
         </TitleContainer>
 
         <InputContainer>
-          <Label>상위 스토리</Label>
-          <Select value={story} onChange={(e) => setStory(e.target.value)}>
-            <option value="">스토리 선택하기</option>
-            {stories.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-        </InputContainer>
-
-        <InputContainer>
           <Label>백로그 설명</Label>
           <StyledTextArea
             placeholder="백로그 설명을 입력하세요."
@@ -58,11 +94,16 @@ const BacklogModal = ({
           <Row>
             <Column>
               <Label>담당자 선택</Label>
-              <Select value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+              <Select
+                value={assignee}
+                onChange={(e) => {
+                  setAssignee(e.target.value);
+                }}
+              >
                 <option value="">선택하기</option>
-                {assignees.map((user) => (
-                  <option key={user} value={user}>
-                    {user}
+                {members.map((member) => (
+                  <option key={member.memberId} value={member.memberId}>
+                    {member.name}
                   </option>
                 ))}
               </Select>
@@ -70,18 +111,22 @@ const BacklogModal = ({
 
             <Column>
               <Label>우선순위 선택</Label>
-              <Select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="">선택하기</option>
-                <option value="high">높음</option>
+              <Select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
                 <option value="medium">중간</option>
+                <option value="high">높음</option>
                 <option value="low">낮음</option>
               </Select>
             </Column>
 
             <Column>
               <Label>진행 상태 설정</Label>
-              <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="">선택하기</option>
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
                 <option value="todo">To Do</option>
                 <option value="inprogress">In Progress</option>
                 <option value="done">Done</option>
@@ -92,7 +137,7 @@ const BacklogModal = ({
 
         <ButtonContainer>
           <CancelButton onClick={onCancel}>취소</CancelButton>
-          <ConfirmButton onClick={onConfirm}>확인</ConfirmButton>
+          <ConfirmButton onClick={handleConfirm}>확인</ConfirmButton>
         </ButtonContainer>
       </ModalContainer>
     </ModalOverlay>
@@ -100,27 +145,25 @@ const BacklogModal = ({
 };
 
 BacklogModal.propTypes = {
+  backlog: PropTypes.shape({
+    backlogId: PropTypes.number.isRequired,
+    projectId: PropTypes.number.isRequired,
+    title: PropTypes.string,
+    storyId: PropTypes.string,
+    description: PropTypes.string,
+    memberId: PropTypes.string,
+    priority: PropTypes.string,
+    status: PropTypes.string,
+    sprintId: PropTypes.number,
+  }).isRequired,
   onCancel: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
-  initialPriority: PropTypes.oneOf(['', 'high', 'medium', 'low']),
-  initialStatus: PropTypes.oneOf(['', 'todo', 'inprogress', 'done']),
-  assignees: PropTypes.arrayOf(PropTypes.string),
-  initialAssignee: PropTypes.string,
-  initialStory: PropTypes.string,
-  stories: PropTypes.arrayOf(PropTypes.string),
-  initialDescription: PropTypes.string,
-  initialModalTitle: PropTypes.string,
-};
-
-BacklogModal.defaultProps = {
-  initialPriority: '',
-  initialStatus: '',
-  assignees: [],
-  initialAssignee: '',
-  initialStory: '',
-  stories: [],
-  initialDescription: '',
-  initialModalTitle: '',
+  fetchBacklogs: PropTypes.func.isRequired,
+  members: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
 };
 
 export default BacklogModal;
@@ -150,7 +193,6 @@ const ModalContainer = styled.div`
 
 const TitleContainer = styled.div`
   margin-bottom: 20px;
-  text-align: center;
 `;
 
 const EditableTitle = styled.input`
@@ -178,47 +220,13 @@ const EditableTitle = styled.input`
 const TitleHint = styled.p`
   font-size: 12px;
   color: #666;
-  text-align: center;
   margin-top: 5px;
-  margin-bottom: 20px;
   font-style: italic;
 `;
 
 const InputContainer = styled.div`
   margin-bottom: 20px;
   text-align: left;
-`;
-
-const Label = styled.label`
-  display: inline-block;
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 5px;
-`;
-
-const StyledTextArea = styled.textarea`
-  width: 100%;
-  height: 80px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  resize: none;
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  color: #333;
-
-  &:focus {
-    border-color: #007bff;
-    outline: none;
-  }
 `;
 
 const Row = styled.div`
@@ -229,6 +237,13 @@ const Row = styled.div`
 
 const Column = styled.div`
   flex: 1;
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 `;
 
 const ButtonContainer = styled.div`
@@ -243,12 +258,6 @@ const CancelButton = styled.button`
   border: none;
   border-radius: 20px;
   padding: 10px 20px;
-  font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #bfbfbf;
-  }
 `;
 
 const ConfirmButton = styled.button`
@@ -257,10 +266,18 @@ const ConfirmButton = styled.button`
   border: none;
   border-radius: 20px;
   padding: 10px 20px;
+`;
+const Label = styled.label`
+  display: inline-block;
   font-size: 14px;
-  cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 5px;
+`;
 
-  &:hover {
-    background-color: #0056b3;
-  }
+const StyledTextArea = styled.textarea`
+  width: 100%;
+  height: 80px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
 `;

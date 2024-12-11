@@ -49,8 +49,8 @@ const StoryContainer = styled.div`
   flex-direction: column;
   justify-content: space-between;
   width: 90%;
-  max-width: 23rem;
-  height: 70vh;
+  max-width: 22rem;
+  height: 67vh;
   background: #fff;
   border-radius: 0.5rem;
   padding: 1rem;
