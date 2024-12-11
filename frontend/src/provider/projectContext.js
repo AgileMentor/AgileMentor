@@ -14,7 +14,7 @@ export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [sprints, setSprints] = useState([]);
-  const [backlogs, setBacklogs] = useState([]); // 백로그 상태 추가
+  const [backlogs, setBacklogs] = useState([]);
   const [members, setMembers] = useState([]);
   const [user, setUser] = useState(null);
 
@@ -88,7 +88,7 @@ export const ProjectProvider = ({ children }) => {
   const fetchBacklogs = useCallback(async (projectId) => {
     if (!projectId) {
       console.warn('프로젝트 ID가 없습니다.');
-      setBacklogs([]); // 프로젝트 선택 해제 시 백로그 초기화
+      setBacklogs([]);
       return;
     }
 
@@ -135,11 +135,6 @@ export const ProjectProvider = ({ children }) => {
       backlogs,
       members,
       user,
-      fetchProjects,
-      fetchSprints,
-      fetchBacklogs,
-      fetchMembers,
-      fetchUser,
     ],
   );
 
