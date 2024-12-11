@@ -1,62 +1,222 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { FaUser, FaPlus, FaListUl } from 'react-icons/fa';
+import { FaUser, FaPlus, FaListUl, FaTrash } from 'react-icons/fa';
 import { useDrag } from 'react-dnd';
+import axios from 'axios';
+import { useProjects } from '../../../provider/projectContext';
 
-// eslint-disable-next-line react/prop-types
-const BacklogBar = ({ inSprint }) => {
-  const [priority, setPriority] = useState('중'); // 우선순위 초기값: 중
+const BacklogBar = ({
+  id,
+  title,
+  priority: initialPriority,
+  status: initialStatus,
+  memberId,
+  fetchBacklogs,
+  description,
+  projectId,
+  onDelete,
+  onClick,
+}) => {
+  const { backlogs, setBacklogs, members } = useProjects();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const assignee = members.find((member) => member.memberId === memberId);
+  const assigneeProfileUrl = assignee?.profileImageUrl || null;
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'BACKLOG_ITEM',
-    item: { priority },
+    item: {
+      id,
+      title,
+      priority: initialPriority,
+      status: initialStatus,
+      memberId,
+      sprintId: null,
+      description,
+      projectId,
+    },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   }));
 
+  const translatedPriority =
+    {
+      HIGH: '상',
+      MEDIUM: '중',
+      LOW: '하',
+    }[initialPriority?.toUpperCase()] || '중';
+
   const handlePriorityChange = () => {
-    setPriority((prev) => {
-      if (prev === '상') return '중';
-      if (prev === '중') return '하';
-      return '상';
-    });
+    const newPriority =
+      // eslint-disable-next-line no-nested-ternary
+      initialPriority === 'HIGH'
+        ? 'MEDIUM'
+        : initialPriority === 'MEDIUM'
+        ? 'LOW'
+        : 'HIGH';
+
+    const updatedBacklogs = backlogs.map((backlog) =>
+      backlog.id === id ? { ...backlog, priority: newPriority } : backlog,
+    );
+    setBacklogs(updatedBacklogs);
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    const formattedStatus = {
+      'To Do': 'TODO',
+      'In Progress': 'IN_PROGRESS',
+      Done: 'DONE',
+    }[newStatus];
+
+    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === id);
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+        {
+          ...updatedBacklog,
+          status: formattedStatus,
+        },
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 200) {
+        const updatedBacklogs = backlogs.map((backlog) =>
+          backlog.id === id ? { ...backlog, status: formattedStatus } : backlog,
+        );
+        setBacklogs(updatedBacklogs);
+        fetchBacklogs(projectId);
+        setIsDropdownOpen(false);
+      }
+    } catch (error) {
+      console.error('백로그 상태 변경 중 오류 발생:', error);
+      alert('상태 변경에 실패했습니다.');
+    }
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    if (onDelete) onDelete(id);
+  };
+
+  const handleClick = async (e) => {
+    e.stopPropagation();
+    try {
+      const response = await axios.get(
+        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+
+      if (response.status === 200) {
+        onClick(response.data);
+      }
+    } catch (error) {
+      console.error('백로그 데이터 가져오기 실패:', error);
+    }
   };
 
   return (
-    <BarContainer ref={!inSprint ? drag : null} isDragging={isDragging}>
+    <BarContainer ref={drag} isDragging={isDragging} onClick={handleClick}>
       <LeftSection>
-        {inSprint ? (
-          <SprintIcon>
-            <FaListUl />
-          </SprintIcon>
-        ) : (
-          <Checkbox type="checkbox" />
-        )}
-        <Text>이름</Text>
+        <SprintIcon>
+          <FaListUl />
+        </SprintIcon>
+        <Text>{title}</Text>
       </LeftSection>
       <RightSection>
         <ActionButton color="#FFD771">
           <FaPlus style={{ marginRight: '4px' }} /> Story
         </ActionButton>
         <Dropdown>
-          <DropdownText>To Do</DropdownText>
-          <DropdownArrow>▼</DropdownArrow>
+          <DropdownButton
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsDropdownOpen(!isDropdownOpen);
+            }}
+          >
+            <DropdownText>{initialStatus}</DropdownText>
+            <DropdownArrow>▼</DropdownArrow>
+          </DropdownButton>
+          {isDropdownOpen && (
+            <DropdownMenu>
+              {['To Do', 'In Progress', 'Done'].map((option) => (
+                <DropdownItem
+                  key={option}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(option);
+                  }}
+                >
+                  {option}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          )}
         </Dropdown>
-        <PriorityBadge priority={priority} onClick={handlePriorityChange}>
-          {priority}
+        <PriorityBadge
+          priority={translatedPriority}
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePriorityChange();
+          }}
+        >
+          {translatedPriority}
         </PriorityBadge>
-        <UserIcon>
-          <FaUser />
-        </UserIcon>
+        <DeleteIcon onClick={handleDelete}>
+          <FaTrash />
+        </DeleteIcon>
+        {assigneeProfileUrl ? (
+          <ProfileIcon
+            src={assigneeProfileUrl}
+            alt="Assignee Profile"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/96';
+            }}
+          />
+        ) : (
+          <UserIcon>
+            <FaUser />
+          </UserIcon>
+        )}
       </RightSection>
     </BarContainer>
   );
 };
 
+BacklogBar.propTypes = {
+  id: PropTypes.number.isRequired,
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  priority: PropTypes.oneOf(['HIGH', 'MEDIUM', 'LOW']),
+  status: PropTypes.oneOf(['TODO', 'IN_PROGRESS', 'DONE']),
+  memberId: PropTypes.number,
+  projectId: PropTypes.number.isRequired,
+  onDelete: PropTypes.func,
+  onClick: PropTypes.func,
+  fetchBacklogs: PropTypes.func.isRequired,
+};
+
+BacklogBar.defaultProps = {
+  priority: 'MEDIUM',
+  status: 'TODO',
+  memberId: null,
+  onDelete: null,
+  onClick: null,
+};
+
 export default BacklogBar;
 
-// Styled Components
 const BarContainer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -66,19 +226,13 @@ const BarContainer = styled.div`
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   opacity: ${(props) => (props.isDragging ? 0.5 : 1)};
-  cursor: ${(props) => (props.isDragging ? 'grabbing' : 'grab')};
+  cursor: pointer;
 `;
 
 const LeftSection = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-`;
-
-const Checkbox = styled.input`
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
 `;
 
 const SprintIcon = styled.div`
@@ -116,6 +270,10 @@ const ActionButton = styled.button`
 `;
 
 const Dropdown = styled.div`
+  position: relative;
+`;
+
+const DropdownButton = styled.div`
   display: flex;
   align-items: center;
   background-color: #bdc8ff;
@@ -135,6 +293,29 @@ const DropdownArrow = styled.span`
   font-size: 1.2rem;
 `;
 
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+`;
+
+const DropdownItem = styled.div`
+  padding: 0.3rem 1rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: #333;
+
+  &:hover {
+    background-color: #f0f0f0;
+  }
+`;
+
 const PriorityBadge = styled.div`
   background-color: ${(props) =>
     // eslint-disable-next-line no-nested-ternary
@@ -152,11 +333,23 @@ const PriorityBadge = styled.div`
   align-items: center;
   justify-content: center;
   font-size: 0.9rem;
+`;
+
+const DeleteIcon = styled.div`
+  font-size: 1.2rem;
+  color: #ff6b6b;
   cursor: pointer;
 
   &:hover {
-    opacity: 0.9;
+    opacity: 0.8;
   }
+`;
+
+const ProfileIcon = styled.img`
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
 `;
 
 const UserIcon = styled.div`
@@ -169,5 +362,4 @@ const UserIcon = styled.div`
   border-radius: 50%;
   width: 2rem;
   height: 2rem;
-  cursor: pointer;
 `;
