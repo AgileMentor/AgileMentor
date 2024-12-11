@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import axios from 'axios';
 
 const ProjectContext = createContext();
@@ -8,14 +14,18 @@ export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [sprints, setSprints] = useState([]);
+  const [backlogs, setBacklogs] = useState([]); // 백로그 상태 추가
   const [members, setMembers] = useState([]);
   const [user, setUser] = useState(null);
 
   const fetchProjects = useCallback(async () => {
     try {
-      const response = await axios.get('https://api.agilementor.kr/api/projects', {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        'https://api.agilementor.kr/api/projects',
+        {
+          withCredentials: true,
+        },
+      );
       setProjects(response.data);
     } catch (error) {
       console.error('프로젝트 데이터를 가져오는 중 오류 발생:', error);
@@ -63,12 +73,38 @@ export const ProjectProvider = ({ children }) => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const response = await axios.get('https://api.agilementor.kr/api/members', {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        'https://api.agilementor.kr/api/members',
+        {
+          withCredentials: true,
+        },
+      );
       setUser(response.data);
     } catch (err) {
       console.error('사용자 데이터를 가져오는 중 오류 발생:', err);
+    }
+  }, []);
+
+  const fetchBacklogs = useCallback(async (projectId) => {
+    if (!projectId) {
+      console.warn('프로젝트 ID가 없습니다.');
+      setBacklogs([]); // 프로젝트 선택 해제 시 백로그 초기화
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://api.agilementor.kr/api/projects/${projectId}/backlogs`,
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        },
+      );
+      setBacklogs(response.data);
+    } catch (error) {
+      console.error('백로그 데이터를 가져오는 중 오류 발생:', error);
     }
   }, []);
 
@@ -82,12 +118,29 @@ export const ProjectProvider = ({ children }) => {
       sprints,
       setSprints,
       fetchSprints,
+      backlogs,
+      setBacklogs,
+      fetchBacklogs,
       members,
+      setMembers,
       fetchMembers,
       user,
+      setUser,
       fetchUser,
     }),
-    [projects, selectedProjectId, sprints, members, user, fetchProjects, fetchSprints, fetchMembers, fetchUser],
+    [
+      projects,
+      selectedProjectId,
+      sprints,
+      backlogs,
+      members,
+      user,
+      fetchProjects,
+      fetchSprints,
+      fetchBacklogs,
+      fetchMembers,
+      fetchUser,
+    ],
   );
 
   return (
