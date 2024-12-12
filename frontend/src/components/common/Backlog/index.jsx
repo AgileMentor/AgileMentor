@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useDrop } from 'react-dnd';
@@ -9,31 +9,20 @@ import axios from 'axios';
 import NewBacklogModal from '@components/common/NewBacklogModal/index';
 // eslint-disable-next-line import/no-unresolved
 import BacklogModal from '@components/common/BacklogModal/index';
-// eslint-disable-next-line import/no-unresolved
-import Sprint from '@components/common/Sprint';
 import { useProjects } from '../../../provider/projectContext';
 
-const Backlog = ({
-  backlogItems,
-  setBacklogItems,
-  setSprintItems,
-  sprints = [],
-}) => {
+const Backlog = ({ showOnlyMyTasks }) => {
   const {
     selectedProjectId,
-    fetchMembers,
-    fetchSprints,
     fetchBacklogs,
-    members,
+    fetchSprints,
+    backlogs,
+    user,
+    selectedBacklogId,
+    setselectedBacklogId,
   } = useProjects();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBacklog, setSelectedBacklog] = useState(null);
 
-  useEffect(() => {
-    if (selectedProjectId) {
-      fetchMembers(selectedProjectId);
-    }
-  }, [selectedProjectId, fetchMembers]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const createSprint = async () => {
     if (!selectedProjectId) {
@@ -62,33 +51,6 @@ const Backlog = ({
     }
   };
 
-  const deleteBacklog = async (backlogId) => {
-    if (!selectedProjectId || !backlogId) {
-      alert('프로젝트 또는 백로그 정보가 없습니다.');
-      return;
-    }
-
-    try {
-      const response = await axios.delete(
-        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
-        {
-          headers: {
-            Cookie: document.cookie,
-          },
-          withCredentials: true,
-        },
-      );
-
-      if (response.status === 204) {
-        alert('백로그가 성공적으로 삭제되었습니다.');
-        fetchBacklogs(selectedProjectId);
-      }
-    } catch (error) {
-      console.error('백로그 삭제 중 오류 발생:', error);
-      alert('백로그 삭제에 실패했습니다.');
-    }
-  };
-
   const moveToBacklog = async (item) => {
     const updatedBacklog = { ...item, sprintId: null };
 
@@ -101,7 +63,6 @@ const Backlog = ({
 
       if (response.status === 200) {
         fetchBacklogs(selectedProjectId);
-        fetchSprints(selectedProjectId);
       }
     } catch (error) {
       console.error('백로그 이동 중 오류 발생:', error);
@@ -117,7 +78,11 @@ const Backlog = ({
     }),
   }));
 
-  const noSprintBacklogs = backlogItems.filter(
+  const filteredBacklogs = showOnlyMyTasks
+    ? backlogs.filter((item) => item.memberId === user?.memberId)
+    : backlogs;
+
+  const noSprintBacklogs = filteredBacklogs.filter(
     (item) => item.sprintId === null || item.sprintId === undefined,
   );
 
@@ -133,56 +98,29 @@ const Backlog = ({
         <BacklogContent>
           {noSprintBacklogs.map((item) => (
             <BacklogBar
-              key={item.id}
-              id={item.id}
-              title={item.title}
-              priority={item.priority}
-              status={item.status}
+              backlogId={item.backlogId}
               memberId={item.memberId}
-              projectId={selectedProjectId}
-              fetchBacklogs={fetchBacklogs}
+              title={item.title}
               description={item.description}
-              onDelete={deleteBacklog}
-              onClick={(data) => {
-                setSelectedBacklog(data);
-              }}
+              status={item.status}
+              priority={item.priority}
+              onClick={() => setselectedBacklogId(item.backlogId)}
             />
           ))}
           <AddTask onClick={() => setIsModalOpen(true)}>+ 작업 만들기</AddTask>
         </BacklogContent>
       </BacklogContainer>
 
-      {sprints.map((sprint) => (
-        <Sprint
-          key={sprint.id}
-          sprintId={sprint.id}
-          sprintItems={backlogItems.filter(
-            (item) => item.sprintId === sprint.id,
-          )}
-          setSprintItems={setSprintItems}
-          setBacklogItems={setBacklogItems}
-          fetchSprints={fetchSprints}
-          title={sprint.title}
-        />
-      ))}
-
       {isModalOpen && (
         <NewBacklogModal
           onCancel={() => setIsModalOpen(false)}
-          onConfirm={() => {
-            setIsModalOpen(false);
-            fetchBacklogs(selectedProjectId);
-          }}
-          assignees={members}
-          projectId={selectedProjectId}
+          onConfirm={() => setIsModalOpen(false)}
         />
       )}
-      {selectedBacklog && (
+
+      {selectedBacklogId && (
         <BacklogModal
-          backlog={selectedBacklog}
-          members={members}
-          onCancel={() => setSelectedBacklog(null)}
-          fetchBacklogs={fetchBacklogs}
+          onCancel={() => setselectedBacklogId(null)}
         />
       )}
     </>
@@ -190,23 +128,7 @@ const Backlog = ({
 };
 
 Backlog.propTypes = {
-  backlogItems: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      title: PropTypes.string.isRequired,
-      priority: PropTypes.string,
-      status: PropTypes.string,
-      sprintId: PropTypes.number,
-    }),
-  ).isRequired,
-  setBacklogItems: PropTypes.func.isRequired,
-  setSprintItems: PropTypes.func.isRequired,
-  sprints: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      title: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
+  showOnlyMyTasks: PropTypes.bool.isRequired,
 };
 
 export default Backlog;
