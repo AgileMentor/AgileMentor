@@ -2,65 +2,62 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useProjects } from '../../../provider/projectContext';
 
-const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
-  const [modalTitle, setModalTitle] = useState('');
-  const [story, setStory] = useState('');
-  const [description, setDescription] = useState('');
-  const [assignee, setAssignee] = useState('');
-  const [priority, setPriority] = useState('');
-  const [status, setStatus] = useState('');
+const BacklogModal = ({ onCancel }) => {
+  const { selectedProjectId, selectedBacklogId, fetchBacklogs, members } = useProjects();
+  const [backlog, setBacklog] = useState(null);
 
   useEffect(() => {
-    if (backlog) {
-      setModalTitle(backlog.title || '백로그 이름');
-      setStory(backlog.storyId || '');
-      setDescription(backlog.description || '');
-      setAssignee(backlog.memberId || '');
-      setPriority(backlog.priority?.toLowerCase() || 'medium');
-      setStatus(backlog.status?.toLowerCase() || 'todo');
-    }
-  }, [backlog]);
+    if (!selectedBacklogId || !selectedProjectId) return;
+
+    const fetchBacklogDetails = async () => {
+      try {
+        const response = await axios.get(
+          `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${selectedBacklogId}`,
+          {
+            withCredentials: true,
+          },
+        );
+        setBacklog(response.data);
+      } catch (error) {
+        console.error('백로그 데이터를 가져오는 중 오류 발생:', error);
+        alert('백로그 데이터를 가져오는 데 실패했습니다.');
+        onCancel();
+      }
+    };
+
+    fetchBacklogDetails();
+  }, [selectedBacklogId, selectedProjectId, onCancel]);
 
   const handleConfirm = async () => {
-    if (!modalTitle || !priority || !status) {
+    if (!backlog.title || !backlog.description || !backlog.status || !backlog.priority) {
       alert('모든 필수 값을 입력하세요!');
       return;
     }
 
-    const formattedStatus = {
-      todo: 'TODO',
-      inprogress: 'IN_PROGRESS',
-      done: 'DONE',
-    }[status];
-
-    const formattedPriority = priority.toUpperCase();
-
     const dataToSend = {
-      title: modalTitle,
-      description,
-      priority: formattedPriority,
-      status: formattedStatus,
-      storyId: story || null,
-      memberId: assignee || null,
       sprintId: backlog.sprintId || null,
+      storyId: backlog.storyId || null,
+      memberId: backlog.memberId || null,
+      title: backlog.title,
+      description: backlog.description,
+      status: backlog.status,
+      priority: backlog.priority,
     };
 
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${backlog.projectId}/backlogs/${backlog.backlogId}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${selectedBacklogId}`,
         dataToSend,
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
 
       if (response.status === 200) {
         alert('백로그가 성공적으로 업데이트되었습니다.');
-        fetchBacklogs(backlog.projectId);
+        fetchBacklogs(selectedProjectId);
         onCancel();
       }
     } catch (error) {
@@ -69,14 +66,16 @@ const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
     }
   };
 
+  if (!backlog) return null;
+
   return (
     <ModalOverlay>
       <ModalContainer>
         <TitleContainer>
           <EditableTitle
             type="text"
-            value={modalTitle}
-            onChange={(e) => setModalTitle(e.target.value)}
+            value={backlog.title || ''}
+            onChange={(e) => setBacklog({ ...backlog, title: e.target.value })}
           />
           <TitleHint>제목을 클릭하여 수정하세요.</TitleHint>
         </TitleContainer>
@@ -85,8 +84,8 @@ const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
           <Label>백로그 설명</Label>
           <StyledTextArea
             placeholder="백로그 설명을 입력하세요."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={backlog.description || ''}
+            onChange={(e) => setBacklog({ ...backlog, description: e.target.value })}
           />
         </InputContainer>
 
@@ -95,10 +94,8 @@ const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
             <Column>
               <Label>담당자 선택</Label>
               <Select
-                value={assignee}
-                onChange={(e) => {
-                  setAssignee(e.target.value);
-                }}
+                value={backlog.memberId || ''}
+                onChange={(e) => setBacklog({ ...backlog, memberId: e.target.value })}
               >
                 <option value="">선택하기</option>
                 {members.map((member) => (
@@ -112,24 +109,24 @@ const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
             <Column>
               <Label>우선순위 선택</Label>
               <Select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                value={backlog.priority?.toUpperCase() || ''}
+                onChange={(e) => setBacklog({ ...backlog, priority: e.target.value.toUpperCase() })}
               >
-                <option value="medium">중간</option>
-                <option value="high">높음</option>
-                <option value="low">낮음</option>
+                <option value="MEDIUM">중간</option>
+                <option value="HIGH">높음</option>
+                <option value="LOW">낮음</option>
               </Select>
             </Column>
 
             <Column>
               <Label>진행 상태 설정</Label>
               <Select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={backlog.status?.toUpperCase() || ''}
+                onChange={(e) => setBacklog({ ...backlog, status: e.target.value.toUpperCase() })}
               >
-                <option value="todo">To Do</option>
-                <option value="inprogress">In Progress</option>
-                <option value="done">Done</option>
+                <option value="TODO">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="DONE">Done</option>
               </Select>
             </Column>
           </Row>
@@ -145,25 +142,7 @@ const BacklogModal = ({ backlog, onCancel, members, fetchBacklogs }) => {
 };
 
 BacklogModal.propTypes = {
-  backlog: PropTypes.shape({
-    backlogId: PropTypes.number.isRequired,
-    projectId: PropTypes.number.isRequired,
-    title: PropTypes.string,
-    storyId: PropTypes.string,
-    description: PropTypes.string,
-    memberId: PropTypes.string,
-    priority: PropTypes.string,
-    status: PropTypes.string,
-    sprintId: PropTypes.number,
-  }).isRequired,
   onCancel: PropTypes.func.isRequired,
-  fetchBacklogs: PropTypes.func.isRequired,
-  members: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
 };
 
 export default BacklogModal;
@@ -267,6 +246,7 @@ const ConfirmButton = styled.button`
   border-radius: 20px;
   padding: 10px 20px;
 `;
+
 const Label = styled.label`
   display: inline-block;
   font-size: 14px;
