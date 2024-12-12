@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { FaUser, FaPlus, FaListUl, FaTrash } from 'react-icons/fa';
@@ -6,61 +6,51 @@ import { useDrag } from 'react-dnd';
 import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
-const BacklogBar = ({
-  backlogId,
-  title,
-  priority: initialPriority,
-  status: initialStatus,
-  memberId,
-  description,
-}) => {
+const BacklogBar = ({ backlogId }) => {
   const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId } = useProjects();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const assignee = members.find((member) => member.memberId === memberId);
+  const backlogData = backlogs.find((backlog) => backlog.backlogId === backlogId) || {};
+
+  const assignee = members.find((member) => member.memberId === backlogData.memberId);
   const assigneeProfileUrl = assignee?.profileImageUrl || null;
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const itemFn = useMemo(() => backlogData, [backlogData]);
+
+  const spec = useMemo(() => ({
     type: 'BACKLOG_ITEM',
-    item: {
-      backlogId,
-      title,
-      priority: initialPriority,
-      status: initialStatus,
-      memberId,
-      sprintId: null,
-      description,
-      selectedProjectId,
-    },
+    item: itemFn,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }));
+  }), [itemFn]);
+
+  const [{ isDragging }, drag] = useDrag(spec);
 
   const translatedPriority =
     {
       HIGH: '상',
       MEDIUM: '중',
       LOW: '하',
-    }[initialPriority?.toUpperCase()] || '중';
+    }[backlogData.priority?.toUpperCase()] || '중';
 
   const handlePriorityChange = async () => {
+    if (!backlogData.priority) return;
+
     let newPriority;
-    if (initialPriority === 'HIGH') {
+    if (backlogData.priority === 'HIGH') {
       newPriority = 'MEDIUM';
-    } else if (initialPriority === 'MEDIUM') {
+    } else if (backlogData.priority === 'MEDIUM') {
       newPriority = 'LOW';
     } else {
       newPriority = 'HIGH';
     }
 
-    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === backlogId);
-
     try {
       const response = await axios.put(
         `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
-          ...updatedBacklog,
+          ...backlogData,
           priority: newPriority,
         },
         {
@@ -72,7 +62,7 @@ const BacklogBar = ({
       );
 
       if (response.status === 200) {
-        fetchBacklogs(selectedProjectId);
+        await fetchBacklogs(selectedProjectId);
         alert('우선순위가 성공적으로 업데이트되었습니다.');
       }
     } catch (error) {
@@ -88,12 +78,11 @@ const BacklogBar = ({
       'Done': 'DONE',
     }[newStatus];
 
-    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === backlogId);
     try {
       const response = await axios.put(
         `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
-          ...updatedBacklog,
+          ...backlogData,
           status: formattedStatus,
         },
         {
@@ -105,7 +94,7 @@ const BacklogBar = ({
       );
 
       if (response.status === 200) {
-        fetchBacklogs(selectedProjectId);
+        await fetchBacklogs(selectedProjectId);
         setIsDropdownOpen(false);
       }
     } catch (error) {
@@ -133,7 +122,7 @@ const BacklogBar = ({
 
       if (response.status === 204) {
         alert('백로그가 성공적으로 삭제되었습니다.');
-        fetchBacklogs(selectedProjectId);
+        await fetchBacklogs(selectedProjectId);
       }
     } catch (error) {
       console.error('백로그 삭제 중 오류 발생:', error);
@@ -152,7 +141,7 @@ const BacklogBar = ({
         <SprintIcon>
           <FaListUl />
         </SprintIcon>
-        <Text>{title}</Text>
+        <Text>{backlogData.title}</Text>
       </LeftSection>
       <RightSection>
         <ActionButton color="#FFD771">
@@ -165,7 +154,7 @@ const BacklogBar = ({
               setIsDropdownOpen(!isDropdownOpen);
             }}
           >
-            <DropdownText>{initialStatus}</DropdownText>
+            <DropdownText>{backlogData.status}</DropdownText>
             <DropdownArrow>▼</DropdownArrow>
           </DropdownButton>
           {isDropdownOpen && (
@@ -193,10 +182,12 @@ const BacklogBar = ({
         >
           {translatedPriority}
         </PriorityBadge>
-        <DeleteIcon onClick={(e) => {
-          e.stopPropagation();
-          deleteBacklog();
-        }}>
+        <DeleteIcon
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteBacklog();
+          }}
+        >
           <FaTrash />
         </DeleteIcon>
         {assigneeProfileUrl ? (
@@ -219,17 +210,6 @@ const BacklogBar = ({
 
 BacklogBar.propTypes = {
   backlogId: PropTypes.number.isRequired,
-  title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  priority: PropTypes.oneOf(['HIGH', 'MEDIUM', 'LOW']),
-  status: PropTypes.oneOf(['TODO', 'IN_PROGRESS', 'DONE']),
-  memberId: PropTypes.number,
-};
-
-BacklogBar.defaultProps = {
-  priority: 'MEDIUM',
-  status: 'TODO',
-  memberId: null,
 };
 
 export default BacklogBar;
@@ -335,13 +315,13 @@ const DropdownItem = styled.div`
 
 const PriorityBadge = styled.div`
   background-color: ${(props) => {
-  const colors = new Map([
-    ['상', '#ff6b6b'],
-    ['중', '#ffd700'],
-    ['하', '#4caf50'],
-  ]);
-  return colors.get(props.priority) || '#4caf50';
-}};
+    const colors = new Map([
+      ['상', '#ff6b6b'],
+      ['중', '#ffd700'],
+      ['하', '#4caf50'],
+    ]);
+    return colors.get(props.priority) || '#4caf50';
+  }};
   color: white;
   font-weight: bold;
   border-radius: 50%;
