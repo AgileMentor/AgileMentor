@@ -14,14 +14,11 @@ const BacklogAndSprintPage = () => {
     selectedProjectId,
     fetchSprints,
     fetchBacklogs,
-    backlogs,
     sprints,
     user,
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
-  const [sprintItems, setSprintItems] = useState([]);
-  const [backlogItems, setBacklogItems] = useState([]);
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
@@ -33,16 +30,6 @@ const BacklogAndSprintPage = () => {
       fetchBacklogs(selectedProjectId);
     }
   }, [selectedProjectId, fetchSprints, fetchBacklogs]);
-
-  useEffect(() => {
-    if (backlogs.length) {
-      setBacklogItems(backlogs);
-    }
-  }, [backlogs]);
-
-  const filteredBacklogs = showOnlyMyTasks
-    ? backlogItems?.filter((backlog) => backlog.memberId === user?.memberId)
-    : backlogItems;
 
   return (
     <PageContainer>
@@ -77,32 +64,14 @@ const BacklogAndSprintPage = () => {
                   isDone={sprint.isDone}
                   isActivate={sprint.isActivate}
                   projectId={selectedProjectId}
-                  fetchBacklogs={() => fetchBacklogs(selectedProjectId)}
-                  fetchSprints={() => fetchSprints(selectedProjectId)}
-                  backlogItems={backlogItems}
-                  setBacklogItems={setBacklogItems}
                   sprintItems={sprint.items}
-                  setSprintItems={setSprintItems}
                   showOnlyMyTasks={showOnlyMyTasks}
                   memberId={user?.memberId}
                 />
               ))}
             </SprintContainer>
             <BacklogContainer>
-              <Backlog
-                backlogItems={filteredBacklogs?.map((backlog) => ({
-                  id: backlog.backlogId,
-                  title: backlog.title,
-                  description: backlog.description,
-                  priority: backlog.priority,
-                  status: backlog.status,
-                  memberId: backlog.memberId,
-                  sprintId: backlog.sprintId,
-                }))}
-                setBacklogItems={setBacklogItems}
-                sprintItems={sprintItems}
-                setSprintItems={setSprintItems}
-              />
+              <Backlog showOnlyMyTasks={showOnlyMyTasks} />
             </BacklogContainer>
           </SprintSection>
         </ContentContainer>
