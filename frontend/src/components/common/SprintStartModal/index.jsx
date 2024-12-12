@@ -1,94 +1,111 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers';
+import { useProjects } from '../../../provider/projectContext';
 
-const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [sprintName, setSprintName] = useState('');
-  const [sprintGoal, setSprintGoal] = useState('');
+const SprintStartModal = ({ onCancel, sprintId }) => {
+  const { selectedProjectId, fetchSprints } = useProjects();
+  const [sprint, setSprint] = useState(null);
+
+  useEffect(() => {
+    const fetchSprintDetails = async () => {
+      if (!selectedProjectId || !sprintId) return;
+      try {
+        const response = await axios.get(
+          `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints/${sprintId}`,
+          { withCredentials: true }
+        );
+        setSprint(response.data);
+      } catch (error) {
+        console.error('스프린트 정보 불러오기 오류:', error);
+        alert('스프린트 정보를 불러오는 데 실패했습니다.');
+        onCancel();
+      }
+    };
+
+    fetchSprintDetails();
+  }, [selectedProjectId, sprintId, onCancel]);
 
   const handleConfirm = async () => {
-    if (!sprintName || !sprintGoal || !endDate) {
+    if (!sprint?.title || !sprint?.goal || !sprint?.endDate) {
       alert('스프린트 이름, 목표 및 종료 날짜를 모두 입력해주세요.');
       return;
     }
 
-    const formattedEndDate = endDate.toISOString().split('T')[0];
+    const formattedEndDate = new Date(sprint.endDate).toISOString().split('T')[0];
 
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}/start`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints/${sprintId}/start`,
         {
-          title: sprintName,
-          goal: sprintGoal,
+          title: sprint.title,
+          goal: sprint.goal,
           endDate: formattedEndDate,
         },
         {
           withCredentials: true,
-        },
+        }
       );
 
       if (response.status === 200) {
+        fetchSprints(selectedProjectId);
         alert('스프린트가 성공적으로 시작되었습니다.');
-        fetchSprints();
+        onCancel();
       }
-
-      onCancel();
     } catch (error) {
       console.error('스프린트 시작 중 오류:', error);
       alert('스프린트를 시작하는 데 실패했습니다.');
     }
   };
 
+  if (!sprint) {
+    return (
+      <ModalOverlay>
+        <ModalContainer>
+          <ModalTitle>로딩 중...</ModalTitle>
+        </ModalContainer>
+      </ModalOverlay>
+    );
+  }
+
   return (
     <ModalOverlay>
       <ModalContainer>
         <ModalTitle>스프린트 시작</ModalTitle>
-        <Subtitle>새로운 스프린트를 시작합니다.</Subtitle>
+        <Subtitle>스프린트 정보를 수정하여 시작합니다.</Subtitle>
 
         <InputContainer>
           <Label>스프린트 이름</Label>
           <StyledInput
             type="text"
             placeholder="스프린트 이름을 입력하세요."
-            value={sprintName}
-            onChange={(e) => setSprintName(e.target.value)}
+            value={sprint.title || ''}
+            onChange={(e) => setSprint((prev) => ({ ...prev, title: e.target.value }))}
           />
         </InputContainer>
 
-        <Row>
-          <DatePickerContainer>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="시작 날짜"
-                value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-              />
-            </LocalizationProvider>
-          </DatePickerContainer>
-
-          <DatePickerContainer>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="종료 날짜"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-              />
-            </LocalizationProvider>
-          </DatePickerContainer>
-        </Row>
+        <DatePickerContainer>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="종료 날짜"
+              value={sprint.endDate ? new Date(sprint.endDate) : null}
+              onChange={(newValue) =>
+                setSprint((prev) => ({ ...prev, endDate: newValue }))
+              }
+            />
+          </LocalizationProvider>
+        </DatePickerContainer>
 
         <InputContainer>
           <Label>스프린트 목표</Label>
           <StyledTextArea
             placeholder="스프린트 목표를 입력하세요."
-            value={sprintGoal}
-            onChange={(e) => setSprintGoal(e.target.value)}
+            value={sprint.goal || ''}
+            onChange={(e) => setSprint((prev) => ({ ...prev, goal: e.target.value }))}
           />
         </InputContainer>
 
@@ -103,9 +120,7 @@ const SprintStartModal = ({ onCancel, projectId, sprintId, fetchSprints }) => {
 
 SprintStartModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
-  projectId: PropTypes.number.isRequired,
   sprintId: PropTypes.number.isRequired,
-  fetchSprints: PropTypes.func.isRequired,
 };
 
 export default SprintStartModal;
@@ -175,13 +190,6 @@ const StyledTextArea = styled.textarea`
   border-radius: 5px;
   font-size: 14px;
   resize: none;
-`;
-
-const Row = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 20px;
 `;
 
 const DatePickerContainer = styled.div`
