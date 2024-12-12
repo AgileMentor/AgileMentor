@@ -7,18 +7,14 @@ import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
 const BacklogBar = ({
-  id,
+  backlogId,
   title,
   priority: initialPriority,
   status: initialStatus,
   memberId,
-  fetchBacklogs,
   description,
-  projectId,
-  onDelete,
-  onClick,
 }) => {
-  const { backlogs, setBacklogs, members } = useProjects();
+  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId } = useProjects();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const assignee = members.find((member) => member.memberId === memberId);
@@ -27,14 +23,14 @@ const BacklogBar = ({
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'BACKLOG_ITEM',
     item: {
-      id,
+      backlogId,
       title,
       priority: initialPriority,
       status: initialStatus,
       memberId,
       sprintId: null,
       description,
-      projectId,
+      selectedProjectId,
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -48,32 +44,54 @@ const BacklogBar = ({
       LOW: '하',
     }[initialPriority?.toUpperCase()] || '중';
 
-  const handlePriorityChange = () => {
-    const newPriority =
-      // eslint-disable-next-line no-nested-ternary
-      initialPriority === 'HIGH'
-        ? 'MEDIUM'
-        : initialPriority === 'MEDIUM'
-        ? 'LOW'
-        : 'HIGH';
+  const handlePriorityChange = async () => {
+    let newPriority;
+    if (initialPriority === 'HIGH') {
+      newPriority = 'MEDIUM';
+    } else if (initialPriority === 'MEDIUM') {
+      newPriority = 'LOW';
+    } else {
+      newPriority = 'HIGH';
+    }
 
-    const updatedBacklogs = backlogs.map((backlog) =>
-      backlog.id === id ? { ...backlog, priority: newPriority } : backlog,
-    );
-    setBacklogs(updatedBacklogs);
+    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === backlogId);
+
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
+        {
+          ...updatedBacklog,
+          priority: newPriority,
+        },
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200) {
+        fetchBacklogs(selectedProjectId);
+        alert('우선순위가 성공적으로 업데이트되었습니다.');
+      }
+    } catch (error) {
+      console.error('우선순위 변경 중 오류 발생:', error);
+      alert('우선순위 변경에 실패했습니다.');
+    }
   };
 
   const handleStatusChange = async (newStatus) => {
     const formattedStatus = {
       'To Do': 'TODO',
       'In Progress': 'IN_PROGRESS',
-      Done: 'DONE',
+      'Done': 'DONE',
     }[newStatus];
 
-    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === id);
+    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === backlogId);
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
           ...updatedBacklog,
           status: formattedStatus,
@@ -87,11 +105,7 @@ const BacklogBar = ({
       );
 
       if (response.status === 200) {
-        const updatedBacklogs = backlogs.map((backlog) =>
-          backlog.id === id ? { ...backlog, status: formattedStatus } : backlog,
-        );
-        setBacklogs(updatedBacklogs);
-        fetchBacklogs(projectId);
+        fetchBacklogs(selectedProjectId);
         setIsDropdownOpen(false);
       }
     } catch (error) {
@@ -100,16 +114,15 @@ const BacklogBar = ({
     }
   };
 
-  const handleDelete = (e) => {
-    e.stopPropagation();
-    if (onDelete) onDelete(id);
-  };
+  const deleteBacklog = async () => {
+    if (!selectedProjectId || !backlogId) {
+      alert('프로젝트 또는 백로그 정보가 없습니다.');
+      return;
+    }
 
-  const handleClick = async (e) => {
-    e.stopPropagation();
     try {
-      const response = await axios.get(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+      const response = await axios.delete(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
           headers: {
             Cookie: document.cookie,
@@ -118,12 +131,19 @@ const BacklogBar = ({
         },
       );
 
-      if (response.status === 200) {
-        onClick(response.data);
+      if (response.status === 204) {
+        alert('백로그가 성공적으로 삭제되었습니다.');
+        fetchBacklogs(selectedProjectId);
       }
     } catch (error) {
-      console.error('백로그 데이터 가져오기 실패:', error);
+      console.error('백로그 삭제 중 오류 발생:', error);
+      alert('백로그 삭제에 실패했습니다.');
     }
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setselectedBacklogId(backlogId);
   };
 
   return (
@@ -173,7 +193,10 @@ const BacklogBar = ({
         >
           {translatedPriority}
         </PriorityBadge>
-        <DeleteIcon onClick={handleDelete}>
+        <DeleteIcon onClick={(e) => {
+          e.stopPropagation();
+          deleteBacklog();
+        }}>
           <FaTrash />
         </DeleteIcon>
         {assigneeProfileUrl ? (
@@ -195,24 +218,18 @@ const BacklogBar = ({
 };
 
 BacklogBar.propTypes = {
-  id: PropTypes.number.isRequired,
+  backlogId: PropTypes.number.isRequired,
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
   priority: PropTypes.oneOf(['HIGH', 'MEDIUM', 'LOW']),
   status: PropTypes.oneOf(['TODO', 'IN_PROGRESS', 'DONE']),
   memberId: PropTypes.number,
-  projectId: PropTypes.number.isRequired,
-  onDelete: PropTypes.func,
-  onClick: PropTypes.func,
-  fetchBacklogs: PropTypes.func.isRequired,
 };
 
 BacklogBar.defaultProps = {
   priority: 'MEDIUM',
   status: 'TODO',
   memberId: null,
-  onDelete: null,
-  onClick: null,
 };
 
 export default BacklogBar;
@@ -317,13 +334,14 @@ const DropdownItem = styled.div`
 `;
 
 const PriorityBadge = styled.div`
-  background-color: ${(props) =>
-    // eslint-disable-next-line no-nested-ternary
-    props.priority === '상'
-      ? '#ff6b6b'
-      : props.priority === '중'
-      ? '#ffd700'
-      : '#4caf50'};
+  background-color: ${(props) => {
+  const colors = new Map([
+    ['상', '#ff6b6b'],
+    ['중', '#ffd700'],
+    ['하', '#4caf50'],
+  ]);
+  return colors.get(props.priority) || '#4caf50';
+}};
   color: white;
   font-weight: bold;
   border-radius: 50%;
