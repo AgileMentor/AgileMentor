@@ -56,7 +56,7 @@ const Backlog = ({ showOnlyMyTasks }) => {
 
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${item.id}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${item.backlogId}`,
         updatedBacklog,
         { withCredentials: true },
       );
@@ -98,13 +98,8 @@ const Backlog = ({ showOnlyMyTasks }) => {
         <BacklogContent>
           {noSprintBacklogs.map((item) => (
             <BacklogBar
+              key={item.backlogId}
               backlogId={item.backlogId}
-              memberId={item.memberId}
-              title={item.title}
-              description={item.description}
-              status={item.status}
-              priority={item.priority}
-              onClick={() => setselectedBacklogId(item.backlogId)}
             />
           ))}
           <AddTask onClick={() => setIsModalOpen(true)}>+ 작업 만들기</AddTask>
