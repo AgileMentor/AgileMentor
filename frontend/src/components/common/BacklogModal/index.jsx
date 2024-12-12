@@ -8,25 +8,24 @@ const BacklogModal = ({ onCancel }) => {
   const { selectedProjectId, selectedBacklogId, fetchBacklogs, members } = useProjects();
   const [backlog, setBacklog] = useState(null);
 
+  const fetchBacklogDetails = async () => {
+    try {
+      const response = await axios.get(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${selectedBacklogId}`,
+        {
+          withCredentials: true,
+        },
+      );
+      setBacklog(response.data);
+    } catch (error) {
+      console.error('백로그 데이터를 가져오는 중 오류 발생:', error);
+      alert('백로그 데이터를 가져오는 데 실패했습니다.');
+      onCancel();
+    }
+  };
+  
   useEffect(() => {
     if (!selectedBacklogId || !selectedProjectId) return;
-
-    const fetchBacklogDetails = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${selectedBacklogId}`,
-          {
-            withCredentials: true,
-          },
-        );
-        setBacklog(response.data);
-      } catch (error) {
-        console.error('백로그 데이터를 가져오는 중 오류 발생:', error);
-        alert('백로그 데이터를 가져오는 데 실패했습니다.');
-        onCancel();
-      }
-    };
-
     fetchBacklogDetails();
   }, [selectedBacklogId, selectedProjectId, onCancel]);
 
