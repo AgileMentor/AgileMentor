@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useProjects } from '../../../provider/projectContext';
 
 const NewBacklogModal = ({
   onCancel,
   onConfirm,
-  assignees,
   stories,
-  projectId,
 }) => {
+  const { fetchBacklogs, selectedProjectId, members } = useProjects();
   const [backlogName, setBacklogName] = useState('');
   const [story, setStory] = useState('');
   const [description, setDescription] = useState('');
@@ -32,13 +32,15 @@ const NewBacklogModal = ({
       };
 
       await axios.post(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs`,
         body,
         { withCredentials: true },
       );
 
       alert('백로그가 성공적으로 생성되었습니다.');
       onConfirm();
+      fetchBacklogs(selectedProjectId);
+      
     } catch (error) {
       console.error('백로그 생성 중 오류:', error);
       alert('백로그 생성에 실패했습니다.');
@@ -93,7 +95,7 @@ const NewBacklogModal = ({
                 }}
               >
                 <option value="">선택하기</option>
-                {assignees.map((user) => (
+                {members.map((user) => (
                   <option key={user.memberId} value={user.memberId}>
                     {user.name}
                   </option>
@@ -128,10 +130,7 @@ NewBacklogModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
   // eslint-disable-next-line react/forbid-prop-types
-  assignees: PropTypes.arrayOf(PropTypes.object).isRequired,
-  // eslint-disable-next-line react/forbid-prop-types
   stories: PropTypes.arrayOf(PropTypes.object),
-  projectId: PropTypes.number.isRequired,
 };
 
 NewBacklogModal.defaultProps = {
