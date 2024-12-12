@@ -13,6 +13,7 @@ const ProjectContext = createContext();
 export const ProjectProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedBacklogId, setselectedBacklogId] = useState(null);
   const [sprints, setSprints] = useState([]);
   const [backlogs, setBacklogs] = useState([]);
   const [members, setMembers] = useState([]);
@@ -115,6 +116,8 @@ export const ProjectProvider = ({ children }) => {
       fetchProjects,
       selectedProjectId,
       setSelectedProjectId,
+      selectedBacklogId,
+      setselectedBacklogId,
       sprints,
       setSprints,
       fetchSprints,
@@ -131,6 +134,7 @@ export const ProjectProvider = ({ children }) => {
     [
       projects,
       selectedProjectId,
+      selectedBacklogId,
       sprints,
       backlogs,
       members,
