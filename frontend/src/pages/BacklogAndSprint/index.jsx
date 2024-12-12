@@ -15,7 +15,6 @@ const BacklogAndSprintPage = () => {
     fetchSprints,
     fetchBacklogs,
     sprints,
-    user,
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
@@ -59,14 +58,8 @@ const BacklogAndSprintPage = () => {
               {sprints.map((sprint) => (
                 <Sprint
                   key={sprint.id}
-                  title={sprint.title}
                   sprintId={sprint.id}
-                  isDone={sprint.isDone}
-                  isActivate={sprint.isActivate}
-                  projectId={selectedProjectId}
-                  sprintItems={sprint.items}
                   showOnlyMyTasks={showOnlyMyTasks}
-                  memberId={user?.memberId}
                 />
               ))}
             </SprintContainer>
