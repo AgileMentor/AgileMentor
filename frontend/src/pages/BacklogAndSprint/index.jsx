@@ -39,7 +39,7 @@ const BacklogAndSprintPage = () => {
         </HeaderContainer>
         <ContentContainer>
           <StoryContainer>
-            <Story projects={projects} />
+            <Story />
           </StoryContainer>
           <SprintSection>
             <ButtonContainer>

@@ -18,6 +18,16 @@ export const ProjectProvider = ({ children }) => {
   const [backlogs, setBacklogs] = useState([]);
   const [members, setMembers] = useState([]);
   const [user, setUser] = useState(null);
+  const [stories, setStories] = useState([]);
+  const [selectedStoryIds, setSelectedStoryIds] = useState([]);
+
+  const toggleSelectStory = useCallback((id) => {
+    setSelectedStoryIds((prevIds) =>
+      prevIds.includes(id)
+        ? prevIds.filter((storyId) => storyId !== id)
+        : [...prevIds, id],
+    );
+  }, []);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -97,15 +107,32 @@ export const ProjectProvider = ({ children }) => {
       const response = await axios.get(
         `https://api.agilementor.kr/api/projects/${projectId}/backlogs`,
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
       setBacklogs(response.data);
     } catch (error) {
       console.error('백로그 데이터를 가져오는 중 오류 발생:', error);
+    }
+  }, []);
+
+  const fetchStories = useCallback(async (projectId) => {
+    if (!projectId) {
+      console.warn('프로젝트 ID가 없습니다.');
+      setStories([]);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://api.agilementor.kr/api/projects/${projectId}/stories`,
+        {
+          withCredentials: true,
+        },
+      );
+      setStories(response.data);
+    } catch (error) {
+      console.error('스토리 데이터를 가져오는 중 오류 발생:', error);
     }
   }, []);
 
@@ -130,6 +157,11 @@ export const ProjectProvider = ({ children }) => {
       user,
       setUser,
       fetchUser,
+      stories,
+      setStories,
+      fetchStories,
+      selectedStoryIds,
+      toggleSelectStory,
     }),
     [
       projects,
@@ -139,6 +171,9 @@ export const ProjectProvider = ({ children }) => {
       backlogs,
       members,
       user,
+      stories,
+      selectedStoryIds,
+      toggleSelectStory,
     ],
   );
 

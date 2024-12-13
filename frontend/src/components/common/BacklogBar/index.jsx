@@ -113,9 +113,6 @@ const BacklogBar = ({ backlogId }) => {
       const response = await axios.delete(
         `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
