@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { FaUser, FaPlus, FaListUl, FaTrash } from 'react-icons/fa';
+import { FaUser, FaListUl, FaTrash } from 'react-icons/fa';
 import { useDrag } from 'react-dnd';
 import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
 const BacklogBar = ({ backlogId }) => {
-  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId } = useProjects();
+  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId, stories } = useProjects();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isStoryDropdownOpen, setIsStoryDropdownOpen] = useState(false);
 
   const backlogData = backlogs.find((backlog) => backlog.backlogId === backlogId) || {};
-
+  const currentStory = stories.find((story) => story.storyId === backlogData.storyId) || { title: '할당된 스토리 없음' };
   const assignee = members.find((member) => member.memberId === backlogData.memberId);
   const assigneeProfileUrl = assignee?.profileImageUrl || null;
 
@@ -54,9 +55,6 @@ const BacklogBar = ({ backlogId }) => {
           priority: newPriority,
         },
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         }
       );
@@ -86,9 +84,6 @@ const BacklogBar = ({ backlogId }) => {
           status: formattedStatus,
         },
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
@@ -127,9 +122,29 @@ const BacklogBar = ({ backlogId }) => {
     }
   };
 
+  const handleStoryChange = async (newStoryId) => {
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
+        { ...backlogData, storyId: newStoryId === 'none' ? null : newStoryId },
+        { withCredentials: true }
+      );
+  
+      if (response.status === 200) {
+        await fetchBacklogs(selectedProjectId);
+        setIsStoryDropdownOpen(false);
+        alert('스토리가 성공적으로 업데이트되었습니다.');
+      }
+    } catch (error) {
+      console.error('스토리 변경 중 오류 발생:', error);
+      alert('스토리 변경에 실패했습니다.');
+    }
+  };
+
   const handleClick = (e) => {
     e.stopPropagation();
     setselectedBacklogId(backlogId);
+    console.log(backlogs)
   };
 
   return (
@@ -141,9 +156,40 @@ const BacklogBar = ({ backlogId }) => {
         <Text>{backlogData.title}</Text>
       </LeftSection>
       <RightSection>
-        <ActionButton color="#FFD771">
-          <FaPlus style={{ marginRight: '4px' }} /> Story
-        </ActionButton>
+        <Dropdown>
+          <ActionButton
+            color="#FFD771"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsStoryDropdownOpen(!isStoryDropdownOpen);
+            }}
+          >
+            {currentStory.title}
+          </ActionButton>
+          {isStoryDropdownOpen && (
+            <DropdownMenu>
+              <DropdownItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStoryChange('none');
+                }}
+              >
+                할당된 스토리 없음
+              </DropdownItem>
+              {stories.map((story) => (
+                <DropdownItem
+                  key={story.storyId}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStoryChange(story.storyId);
+                  }}
+                >
+                  {story.title}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          )}
+        </Dropdown>
         <Dropdown>
           <DropdownButton
             onClick={(e) => {
@@ -251,11 +297,11 @@ const ActionButton = styled.button`
   align-items: center;
   background-color: ${(props) => props.color || '#ddd'};
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: bold;
   border: none;
   border-radius: 4px;
-  padding: 0.45rem 1.3rem;
+  padding: 0.45rem 0.5rem;
   cursor: pointer;
 
   &:hover {
@@ -273,12 +319,12 @@ const DropdownButton = styled.div`
   background-color: #bdc8ff;
   color: #ffffff;
   border-radius: 4px;
-  padding: 0.25rem 1.3rem;
+  padding: 0.18rem 0.5rem;
   cursor: pointer;
 `;
 
 const DropdownText = styled.span`
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   font-weight: bold;
 `;
 
@@ -297,6 +343,7 @@ const DropdownMenu = styled.div`
   margin-top: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
+  min-width: 130px;
 `;
 
 const DropdownItem = styled.div`
@@ -358,3 +405,4 @@ const UserIcon = styled.div`
   width: 2rem;
   height: 2rem;
 `;
+
