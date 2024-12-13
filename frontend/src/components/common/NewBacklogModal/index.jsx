@@ -8,7 +8,7 @@ const NewBacklogModal = ({
   onCancel,
   onConfirm,
 }) => {
-  const { fetchBacklogs, selectedProjectId, members, stories } = useProjects();
+  const { fetchBacklogs, selectedProjectId, members, stories, fetchStories } = useProjects();
   const [backlogName, setBacklogName] = useState('');
   const [story, setStory] = useState('');
   const [description, setDescription] = useState('');
@@ -39,6 +39,7 @@ const NewBacklogModal = ({
       alert('백로그가 성공적으로 생성되었습니다.');
       onConfirm();
       fetchBacklogs(selectedProjectId);
+      fetchStories(selectedProjectId);
       
     } catch (error) {
       console.error('백로그 생성 중 오류:', error);

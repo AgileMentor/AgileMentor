@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
 const BacklogModal = ({ onCancel }) => {
-  const { selectedProjectId, selectedBacklogId, fetchBacklogs, members } = useProjects();
+  const { selectedProjectId, selectedBacklogId, fetchBacklogs, members, fetchStories } = useProjects();
   const [backlog, setBacklog] = useState(null);
 
   const fetchBacklogDetails = async () => {
@@ -57,6 +57,7 @@ const BacklogModal = ({ onCancel }) => {
       if (response.status === 200) {
         alert('백로그가 성공적으로 업데이트되었습니다.');
         fetchBacklogs(selectedProjectId);
+        fetchStories(selectedProjectId);
         onCancel();
       }
     } catch (error) {

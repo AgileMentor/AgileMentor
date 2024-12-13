@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
 const BacklogBar = ({ backlogId }) => {
-  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId, stories } = useProjects();
+  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId, stories, fetchStories } = useProjects();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isStoryDropdownOpen, setIsStoryDropdownOpen] = useState(false);
 
@@ -90,6 +90,7 @@ const BacklogBar = ({ backlogId }) => {
 
       if (response.status === 200) {
         await fetchBacklogs(selectedProjectId);
+        await fetchStories(selectedProjectId);
         setIsDropdownOpen(false);
       }
     } catch (error) {
@@ -132,6 +133,7 @@ const BacklogBar = ({ backlogId }) => {
   
       if (response.status === 200) {
         await fetchBacklogs(selectedProjectId);
+        await fetchStories(selectedProjectId);
         setIsStoryDropdownOpen(false);
         alert('스토리가 성공적으로 업데이트되었습니다.');
       }
