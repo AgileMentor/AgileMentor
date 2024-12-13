@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useDrop } from 'react-dnd';
@@ -20,6 +20,7 @@ const Backlog = ({ showOnlyMyTasks }) => {
     user,
     selectedBacklogId,
     setselectedBacklogId,
+    selectedStoryIds,
   } = useProjects();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,7 +67,7 @@ const Backlog = ({ showOnlyMyTasks }) => {
       }
     } catch (error) {
       console.error('백로그 이동 중 오류 발생:', error);
-      alert('백로그를 스프린트로 이동하는 데 실패했습니다.');
+      alert('백로그를 백로그 화면으로 이동하는 데 실패했습니다.');
     }
   };
 
@@ -78,13 +79,21 @@ const Backlog = ({ showOnlyMyTasks }) => {
     }),
   }));
 
-  const filteredBacklogs = showOnlyMyTasks
-    ? backlogs.filter((item) => item.memberId === user?.memberId)
-    : backlogs;
+  const filteredBacklogs = useMemo(() => {
+    let result = showOnlyMyTasks
+      ? backlogs.filter((item) => item.memberId === user?.memberId)
+      : backlogs;
 
-  const noSprintBacklogs = filteredBacklogs.filter(
-    (item) => item.sprintId === null || item.sprintId === undefined,
-  );
+    result = result.filter(
+      (item) => item.sprintId === null || item.sprintId === undefined,
+    );
+
+    if (selectedStoryIds.length > 0) {
+      result = result.filter((item) => selectedStoryIds.includes(item.storyId));
+    }
+
+    return result;
+  }, [backlogs, showOnlyMyTasks, user, selectedStoryIds]);
 
   return (
     <>
@@ -96,7 +105,7 @@ const Backlog = ({ showOnlyMyTasks }) => {
           <CreateButton onClick={createSprint}>스프린트 만들기</CreateButton>
         </Header>
         <BacklogContent>
-          {noSprintBacklogs.map((item) => (
+          {filteredBacklogs.map((item) => (
             <BacklogBar
               key={item.backlogId}
               backlogId={item.backlogId}

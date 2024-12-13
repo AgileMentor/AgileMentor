@@ -146,7 +146,6 @@ const BacklogBar = ({ backlogId }) => {
   const handleClick = (e) => {
     e.stopPropagation();
     setselectedBacklogId(backlogId);
-    console.log(backlogs)
   };
 
   return (

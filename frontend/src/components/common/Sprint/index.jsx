@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { FaTrash } from 'react-icons/fa';
@@ -11,31 +11,40 @@ import SprintStartModal from '../SprintStartModal';
 import { useProjects } from '../../../provider/projectContext';
 
 const Sprint = ({ sprintId, showOnlyMyTasks }) => {
-  const { 
+  const {
     fetchBacklogs,
     fetchSprints,
-    selectedProjectId, 
-    user, 
-    backlogs, 
-    sprints, 
+    selectedProjectId,
+    user,
+    backlogs,
+    sprints,
     selectedBacklogId,
     setselectedBacklogId,
+    selectedStoryIds,
   } = useProjects();
-  
+
   const currentSprint = sprints.find((s) => s.id === sprintId) || {};
 
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const sprintBacklogItems = (backlogs || []).filter(
-    (backlog) => backlog && backlog.sprintId === sprintId
+    (backlog) => backlog && backlog.sprintId === sprintId,
   );
-  
-  const filteredBacklogItems = showOnlyMyTasks
-    ? sprintBacklogItems.filter(
-        (backlog) => backlog && backlog.memberId === user?.memberId
-      )
-    : sprintBacklogItems;
+
+  const filteredBacklogItems = useMemo(() => {
+    let result = showOnlyMyTasks
+      ? sprintBacklogItems.filter(
+          (backlog) => backlog && backlog.memberId === user?.memberId,
+        )
+      : sprintBacklogItems;
+
+    if (selectedStoryIds.length > 0) {
+      result = result.filter((backlog) => selectedStoryIds.includes(backlog.storyId));
+    }
+
+    return result;
+  }, [sprintBacklogItems, showOnlyMyTasks, user, selectedStoryIds]);
 
   const handleCancelStart = () => {
     setIsStartModalOpen(false);
@@ -160,26 +169,17 @@ const Sprint = ({ sprintId, showOnlyMyTasks }) => {
       </Header>
       <SprintContent>
         {filteredBacklogItems.map((item) => (
-          <BacklogBar
-            key={item.backlogId}
-            backlogId={item.backlogId}
-          />
+          <BacklogBar key={item.backlogId} backlogId={item.backlogId} />
         ))}
         <AddTask>+ 작업 만들기</AddTask>
       </SprintContent>
 
       {isStartModalOpen && (
-        <SprintStartModal
-          onCancel={handleCancelStart}
-          sprintId={sprintId}
-        />
+        <SprintStartModal onCancel={handleCancelStart} sprintId={sprintId} />
       )}
 
       {isEditModalOpen && currentSprint && (
-        <SprintSettingModal
-          onCancel={handleCancelEdit}
-          sprintId={sprintId}
-        />
+        <SprintSettingModal onCancel={handleCancelEdit} sprintId={sprintId} />
       )}
 
       {selectedBacklogId && (
@@ -281,5 +281,3 @@ const AddTask = styled.div`
     text-decoration: underline;
   }
 `;
-
-
