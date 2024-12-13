@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useEffect,
 } from 'react';
 import axios from 'axios';
 
@@ -28,6 +29,10 @@ export const ProjectProvider = ({ children }) => {
         : [...prevIds, id],
     );
   }, []);
+
+  useEffect(() => {
+    setSelectedStoryIds([]);
+  }, [selectedProjectId]);
 
   const fetchProjects = useCallback(async () => {
     try {
