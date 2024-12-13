@@ -1,97 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { FaUser, FaPlus, FaListUl, FaTrash } from 'react-icons/fa';
+import { FaUser, FaListUl, FaTrash } from 'react-icons/fa';
 import { useDrag } from 'react-dnd';
 import axios from 'axios';
 import { useProjects } from '../../../provider/projectContext';
 
-const BacklogBar = ({
-  id,
-  title,
-  priority: initialPriority,
-  status: initialStatus,
-  memberId,
-  fetchBacklogs,
-  description,
-  projectId,
-  onDelete,
-  onClick,
-}) => {
-  const { backlogs, setBacklogs, members } = useProjects();
+const BacklogBar = ({ backlogId }) => {
+  const { backlogs, members, fetchBacklogs, selectedProjectId, setselectedBacklogId, stories, fetchStories } = useProjects();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isStoryDropdownOpen, setIsStoryDropdownOpen] = useState(false);
 
-  const assignee = members.find((member) => member.memberId === memberId);
+  const backlogData = backlogs.find((backlog) => backlog.backlogId === backlogId) || {};
+  const currentStory = stories.find((story) => story.storyId === backlogData.storyId) || { title: '할당된 스토리 없음' };
+  const assignee = members.find((member) => member.memberId === backlogData.memberId);
   const assigneeProfileUrl = assignee?.profileImageUrl || null;
 
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const itemFn = useMemo(() => backlogData, [backlogData]);
+
+  const spec = useMemo(() => ({
     type: 'BACKLOG_ITEM',
-    item: {
-      id,
-      title,
-      priority: initialPriority,
-      status: initialStatus,
-      memberId,
-      sprintId: null,
-      description,
-      projectId,
-    },
+    item: itemFn,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }));
+  }), [itemFn]);
+
+  const [{ isDragging }, drag] = useDrag(spec);
 
   const translatedPriority =
     {
       HIGH: '상',
       MEDIUM: '중',
       LOW: '하',
-    }[initialPriority?.toUpperCase()] || '중';
+    }[backlogData.priority?.toUpperCase()] || '중';
 
-  const handlePriorityChange = () => {
-    const newPriority =
-      // eslint-disable-next-line no-nested-ternary
-      initialPriority === 'HIGH'
-        ? 'MEDIUM'
-        : initialPriority === 'MEDIUM'
-        ? 'LOW'
-        : 'HIGH';
+  const handlePriorityChange = async () => {
+    if (!backlogData.priority) return;
 
-    const updatedBacklogs = backlogs.map((backlog) =>
-      backlog.id === id ? { ...backlog, priority: newPriority } : backlog,
-    );
-    setBacklogs(updatedBacklogs);
+    let newPriority;
+    if (backlogData.priority === 'HIGH') {
+      newPriority = 'MEDIUM';
+    } else if (backlogData.priority === 'MEDIUM') {
+      newPriority = 'LOW';
+    } else {
+      newPriority = 'HIGH';
+    }
+
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
+        {
+          ...backlogData,
+          priority: newPriority,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200) {
+        await fetchBacklogs(selectedProjectId);
+        alert('우선순위가 성공적으로 업데이트되었습니다.');
+      }
+    } catch (error) {
+      console.error('우선순위 변경 중 오류 발생:', error);
+      alert('우선순위 변경에 실패했습니다.');
+    }
   };
 
   const handleStatusChange = async (newStatus) => {
     const formattedStatus = {
       'To Do': 'TODO',
       'In Progress': 'IN_PROGRESS',
-      Done: 'DONE',
+      'Done': 'DONE',
     }[newStatus];
 
-    const updatedBacklog = backlogs.find((backlog) => backlog.backlogId === id);
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
-          ...updatedBacklog,
+          ...backlogData,
           status: formattedStatus,
         },
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
 
       if (response.status === 200) {
-        const updatedBacklogs = backlogs.map((backlog) =>
-          backlog.id === id ? { ...backlog, status: formattedStatus } : backlog,
-        );
-        setBacklogs(updatedBacklogs);
-        fetchBacklogs(projectId);
+        await fetchBacklogs(selectedProjectId);
+        await fetchStories(selectedProjectId);
         setIsDropdownOpen(false);
       }
     } catch (error) {
@@ -100,30 +99,53 @@ const BacklogBar = ({
     }
   };
 
-  const handleDelete = (e) => {
-    e.stopPropagation();
-    if (onDelete) onDelete(id);
-  };
+  const deleteBacklog = async () => {
+    if (!selectedProjectId || !backlogId) {
+      alert('프로젝트 또는 백로그 정보가 없습니다.');
+      return;
+    }
 
-  const handleClick = async (e) => {
-    e.stopPropagation();
     try {
-      const response = await axios.get(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${id}`,
+      const response = await axios.delete(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
         {
-          headers: {
-            Cookie: document.cookie,
-          },
           withCredentials: true,
         },
       );
 
-      if (response.status === 200) {
-        onClick(response.data);
+      if (response.status === 204) {
+        alert('백로그가 성공적으로 삭제되었습니다.');
+        await fetchBacklogs(selectedProjectId);
       }
     } catch (error) {
-      console.error('백로그 데이터 가져오기 실패:', error);
+      console.error('백로그 삭제 중 오류 발생:', error);
+      alert('백로그 삭제에 실패했습니다.');
     }
+  };
+
+  const handleStoryChange = async (newStoryId) => {
+    try {
+      const response = await axios.put(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${backlogId}`,
+        { ...backlogData, storyId: newStoryId === 'none' ? null : newStoryId },
+        { withCredentials: true }
+      );
+  
+      if (response.status === 200) {
+        await fetchBacklogs(selectedProjectId);
+        await fetchStories(selectedProjectId);
+        setIsStoryDropdownOpen(false);
+        alert('스토리가 성공적으로 업데이트되었습니다.');
+      }
+    } catch (error) {
+      console.error('스토리 변경 중 오류 발생:', error);
+      alert('스토리 변경에 실패했습니다.');
+    }
+  };
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setselectedBacklogId(backlogId);
   };
 
   return (
@@ -132,12 +154,43 @@ const BacklogBar = ({
         <SprintIcon>
           <FaListUl />
         </SprintIcon>
-        <Text>{title}</Text>
+        <Text>{backlogData.title}</Text>
       </LeftSection>
       <RightSection>
-        <ActionButton color="#FFD771">
-          <FaPlus style={{ marginRight: '4px' }} /> Story
-        </ActionButton>
+        <Dropdown>
+          <ActionButton
+            color="#FFD771"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsStoryDropdownOpen(!isStoryDropdownOpen);
+            }}
+          >
+            {currentStory.title}
+          </ActionButton>
+          {isStoryDropdownOpen && (
+            <DropdownMenu>
+              <DropdownItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStoryChange('none');
+                }}
+              >
+                할당된 스토리 없음
+              </DropdownItem>
+              {stories.map((story) => (
+                <DropdownItem
+                  key={story.storyId}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStoryChange(story.storyId);
+                  }}
+                >
+                  {story.title}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          )}
+        </Dropdown>
         <Dropdown>
           <DropdownButton
             onClick={(e) => {
@@ -145,7 +198,7 @@ const BacklogBar = ({
               setIsDropdownOpen(!isDropdownOpen);
             }}
           >
-            <DropdownText>{initialStatus}</DropdownText>
+            <DropdownText>{backlogData.status}</DropdownText>
             <DropdownArrow>▼</DropdownArrow>
           </DropdownButton>
           {isDropdownOpen && (
@@ -173,7 +226,12 @@ const BacklogBar = ({
         >
           {translatedPriority}
         </PriorityBadge>
-        <DeleteIcon onClick={handleDelete}>
+        <DeleteIcon
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteBacklog();
+          }}
+        >
           <FaTrash />
         </DeleteIcon>
         {assigneeProfileUrl ? (
@@ -195,24 +253,7 @@ const BacklogBar = ({
 };
 
 BacklogBar.propTypes = {
-  id: PropTypes.number.isRequired,
-  title: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-  priority: PropTypes.oneOf(['HIGH', 'MEDIUM', 'LOW']),
-  status: PropTypes.oneOf(['TODO', 'IN_PROGRESS', 'DONE']),
-  memberId: PropTypes.number,
-  projectId: PropTypes.number.isRequired,
-  onDelete: PropTypes.func,
-  onClick: PropTypes.func,
-  fetchBacklogs: PropTypes.func.isRequired,
-};
-
-BacklogBar.defaultProps = {
-  priority: 'MEDIUM',
-  status: 'TODO',
-  memberId: null,
-  onDelete: null,
-  onClick: null,
+  backlogId: PropTypes.number.isRequired,
 };
 
 export default BacklogBar;
@@ -257,11 +298,11 @@ const ActionButton = styled.button`
   align-items: center;
   background-color: ${(props) => props.color || '#ddd'};
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: bold;
   border: none;
   border-radius: 4px;
-  padding: 0.45rem 1.3rem;
+  padding: 0.45rem 0.5rem;
   cursor: pointer;
 
   &:hover {
@@ -279,12 +320,12 @@ const DropdownButton = styled.div`
   background-color: #bdc8ff;
   color: #ffffff;
   border-radius: 4px;
-  padding: 0.25rem 1.3rem;
+  padding: 0.18rem 0.5rem;
   cursor: pointer;
 `;
 
 const DropdownText = styled.span`
-  font-size: 0.8rem;
+  font-size: 0.6rem;
   font-weight: bold;
 `;
 
@@ -303,6 +344,7 @@ const DropdownMenu = styled.div`
   margin-top: 4px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
+  min-width: 130px;
 `;
 
 const DropdownItem = styled.div`
@@ -317,13 +359,14 @@ const DropdownItem = styled.div`
 `;
 
 const PriorityBadge = styled.div`
-  background-color: ${(props) =>
-    // eslint-disable-next-line no-nested-ternary
-    props.priority === '상'
-      ? '#ff6b6b'
-      : props.priority === '중'
-      ? '#ffd700'
-      : '#4caf50'};
+  background-color: ${(props) => {
+    const colors = new Map([
+      ['상', '#ff6b6b'],
+      ['중', '#ffd700'],
+      ['하', '#4caf50'],
+    ]);
+    return colors.get(props.priority) || '#4caf50';
+  }};
   color: white;
   font-weight: bold;
   border-radius: 50%;
@@ -363,3 +406,4 @@ const UserIcon = styled.div`
   width: 2rem;
   height: 2rem;
 `;
+

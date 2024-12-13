@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useProjects } from '../../../provider/projectContext';
 
 const NewBacklogModal = ({
   onCancel,
   onConfirm,
-  assignees,
-  stories,
-  projectId,
 }) => {
+  const { fetchBacklogs, selectedProjectId, members, stories, fetchStories } = useProjects();
   const [backlogName, setBacklogName] = useState('');
   const [story, setStory] = useState('');
   const [description, setDescription] = useState('');
@@ -27,18 +26,21 @@ const NewBacklogModal = ({
         title: backlogName,
         description,
         priority: priority.toUpperCase(),
-        ...(story && { storyId: story }),
-        ...(assignee && { memberId: assignee }),
+        ...(story && story !== 'none' && { storyId: story }),
+        ...(assignee && assignee !== 'none' && { memberId: assignee }),
       };
 
       await axios.post(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs`,
         body,
         { withCredentials: true },
       );
 
       alert('백로그가 성공적으로 생성되었습니다.');
       onConfirm();
+      fetchBacklogs(selectedProjectId);
+      fetchStories(selectedProjectId);
+      
     } catch (error) {
       console.error('백로그 생성 중 오류:', error);
       alert('백로그 생성에 실패했습니다.');
@@ -62,10 +64,14 @@ const NewBacklogModal = ({
 
         <InputContainer>
           <Label>상위 스토리</Label>
-          <Select value={story} onChange={(e) => setStory(e.target.value)}>
-            <option value="">스토리 선택하기</option>
+          <Select
+            value={story}
+            onChange={(e) => setStory(e.target.value)}
+          >
+            <option value="" disabled>선택하기</option>
+            <option value="none">상위 스토리가 없는 백로그</option>
             {stories.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option key={s.storyId} value={s.storyId}>
                 {s.title}
               </option>
             ))}
@@ -88,12 +94,12 @@ const NewBacklogModal = ({
               <Select
                 value={assignee}
                 onChange={(e) => {
-                  console.log('선택된 담당자 ID:', e.target.value);
                   setAssignee(e.target.value);
                 }}
               >
-                <option value="">선택하기</option>
-                {assignees.map((user) => (
+                <option value="" disabled>선택하기</option>
+                <option value="none">담당자가 없는 백로그</option>
+                {members.map((user) => (
                   <option key={user.memberId} value={user.memberId}>
                     {user.name}
                   </option>
@@ -106,7 +112,7 @@ const NewBacklogModal = ({
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
-                <option value="">선택하기</option>
+                <option value="" disabled>선택하기</option>
                 <option value="HIGH">높음</option>
                 <option value="MEDIUM">중간</option>
                 <option value="LOW">낮음</option>
@@ -127,15 +133,6 @@ const NewBacklogModal = ({
 NewBacklogModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
-  // eslint-disable-next-line react/forbid-prop-types
-  assignees: PropTypes.arrayOf(PropTypes.object).isRequired,
-  // eslint-disable-next-line react/forbid-prop-types
-  stories: PropTypes.arrayOf(PropTypes.object),
-  projectId: PropTypes.number.isRequired,
-};
-
-NewBacklogModal.defaultProps = {
-  stories: [],
 };
 
 export default NewBacklogModal;

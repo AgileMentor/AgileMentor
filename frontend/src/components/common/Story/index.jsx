@@ -1,43 +1,102 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { FaSquare } from 'react-icons/fa';
+import axios from 'axios';
+import { FaSquare, FaTrash } from 'react-icons/fa';
+import { useProjects } from '../../../provider/projectContext';
+import NewStoryModal from '../NewStoryModal';
+import StoryDetailsModal from '../StoryDetailsModal';
 
 const Story = () => {
-  const [selectedStoryIds, setSelectedStoryIds] = useState([]);
+  const {
+    selectedProjectId,
+    stories,
+    fetchStories,
+    selectedStoryIds,
+    toggleSelectStory,
+  } = useProjects();
 
-  const stories = [
-    { id: 1, title: '스토리1', status: '진행 중' },
-    { id: 2, title: '스토리2', status: '완료' },
-    { id: 3, title: '스토리3', status: '진행 중' },
-  ];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentStoryId, setCurrentStoryId] = useState(null);
 
-  const toggleSelectStory = (id) => {
-    setSelectedStoryIds((prevIds) =>
-      prevIds.includes(id)
-        ? prevIds.filter((storyId) => storyId !== id)
-        : [...prevIds, id],
-    );
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchStories(selectedProjectId);
+    }
+  }, [selectedProjectId, fetchStories]);
+
+  const handleDeleteStory = async (storyId) => {
+    if (!selectedProjectId) {
+      alert('프로젝트 ID가 없습니다.');
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/stories/${storyId}`,
+        { withCredentials: true }
+      );
+      if (selectedStoryIds.includes(storyId)) {
+        toggleSelectStory(storyId);
+      }
+      alert('스토리가 성공적으로 삭제되었습니다.');
+      fetchStories(selectedProjectId);
+    } catch (error) {
+      console.error('스토리 삭제 중 오류:', error);
+      alert('스토리 삭제에 실패했습니다.');
+    }
   };
 
   return (
     <StoryContainer>
       <Header>스토리</Header>
-      <StoryList>
-        {stories.map((story) => (
-          <StoryItem
-            key={story.id}
-            isSelected={selectedStoryIds.includes(story.id)}
-            onClick={() => toggleSelectStory(story.id)}
-          >
-            <StoryLeft>
-              <StoryIcon />
-              <StoryText>{story.title}</StoryText>
-            </StoryLeft>
-            <StoryStatus status={story.status}>{story.status}</StoryStatus>
-          </StoryItem>
-        ))}
-      </StoryList>
-      <AddStory>+ 스토리 만들기</AddStory>
+      <ScrollableStoryList>
+        {stories.length > 0 ? (
+          stories.map((story) => (
+            <StoryItem
+              key={story.storyId}
+              isSelected={selectedStoryIds.includes(story.storyId)}
+              onClick={() => {
+                toggleSelectStory(story.storyId);
+              }}
+            >
+              <StoryLeft>
+                <StoryIcon
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentStoryId(story.storyId);
+                  }}
+                />
+                <StoryText>{story.title}</StoryText>
+              </StoryLeft>
+              <StoryActions>
+                <StoryStatus status={story.status}>{story.status}</StoryStatus>
+                <DeleteButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteStory(story.storyId);
+                  }}
+                >
+                  <FaTrash />
+                </DeleteButton>
+              </StoryActions>
+            </StoryItem>
+          ))
+        ) : (
+          <NoStories>스토리가 없습니다.</NoStories>
+        )}
+      </ScrollableStoryList>
+      <AddStory onClick={() => setIsModalOpen(true)}>+ 스토리 만들기</AddStory>
+
+      {isModalOpen && (
+        <NewStoryModal onCancel={() => setIsModalOpen(false)} />
+      )}
+
+      {currentStoryId && (
+        <StoryDetailsModal
+          storyId={currentStoryId}
+          onClose={() => setCurrentStoryId(null)}
+        />
+      )}
     </StoryContainer>
   );
 };
@@ -68,10 +127,13 @@ const Header = styled.div`
   margin-bottom: 1rem;
 `;
 
-const StoryList = styled.div`
+const ScrollableStoryList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  max-height: calc(67vh - 4rem); /* Adjust to leave space for header and footer */
 `;
 
 const StoryItem = styled.div`
@@ -102,9 +164,20 @@ const StoryLeft = styled.div`
   gap: 0.5rem;
 `;
 
+const StoryActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 const StoryIcon = styled(FaSquare)`
   color: #80a7f0;
   font-size: 2rem;
+  cursor: pointer;
+
+  &:hover {
+    color: #0056b3;
+  }
 `;
 
 const StoryText = styled.div`
@@ -117,7 +190,7 @@ const StoryText = styled.div`
 `;
 
 const StoryStatus = styled.div`
-  font-size: 0.9rem;
+  font-size: 0.5rem;
   font-weight: bold;
   color: ${(props) => (props.status === '진행 중' ? '#ffa500' : '#00b300')};
   background: ${(props) =>
@@ -126,6 +199,18 @@ const StoryStatus = styled.div`
       : 'rgba(0, 179, 0, 0.2)'};
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
+`;
+
+const DeleteButton = styled.button`
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ff6b6b;
+  font-size: 1.2rem;
+
+  &:hover {
+    color: #ff4c4c;
+  }
 `;
 
 const AddStory = styled.div`
@@ -141,4 +226,10 @@ const AddStory = styled.div`
   @media (max-width: 768px) {
     font-size: 0.9rem;
   }
+`;
+
+const NoStories = styled.div`
+  font-size: 1rem;
+  color: #868e96;
+  text-align: center;
 `;

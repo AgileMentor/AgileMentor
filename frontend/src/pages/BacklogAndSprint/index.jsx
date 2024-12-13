@@ -6,7 +6,6 @@ import Story from '@components/common/Story/index';
 import Sprint from '@components/common/Sprint/index';
 // eslint-disable-next-line import/no-unresolved
 import Backlog from '@components/common/Backlog/index';
-import axios from 'axios';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
@@ -15,54 +14,21 @@ const BacklogAndSprintPage = () => {
     selectedProjectId,
     fetchSprints,
     fetchBacklogs,
-    backlogs,
     sprints,
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
-  const [memberId, setMemberId] = useState(null);
-  const [sprintItems, setSprintItems] = useState([]);
-  const [backlogItems, setBacklogItems] = useState([]);
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
       ?.title || '프로젝트 선택하기';
-
-  // 사용자 memberId를 API로 가져오기
-  useEffect(() => {
-    const fetchMemberId = async () => {
-      try {
-        const response = await axios.get(
-          'https://api.agilementor.kr/api/members',
-          {
-            withCredentials: true,
-          },
-        );
-        setMemberId(response.data.memberId);
-      } catch (error) {
-        console.error('사용자 ID 가져오기 실패:', error);
-      }
-    };
-
-    fetchMemberId();
-  }, []);
 
   useEffect(() => {
     if (selectedProjectId) {
       fetchSprints(selectedProjectId);
       fetchBacklogs(selectedProjectId);
     }
-  }, [selectedProjectId]);
-
-  useEffect(() => {
-    if (backlogs.length) {
-      setBacklogItems(backlogs);
-    }
-  }, [backlogs]);
-
-  const filteredBacklogs = showOnlyMyTasks
-    ? backlogItems?.filter((backlog) => backlog.memberId === memberId)
-    : backlogItems;
+  }, [selectedProjectId, fetchSprints, fetchBacklogs]);
 
   return (
     <PageContainer>
@@ -73,7 +39,7 @@ const BacklogAndSprintPage = () => {
         </HeaderContainer>
         <ContentContainer>
           <StoryContainer>
-            <Story projects={projects} />
+            <Story />
           </StoryContainer>
           <SprintSection>
             <ButtonContainer>
@@ -92,37 +58,13 @@ const BacklogAndSprintPage = () => {
               {sprints.map((sprint) => (
                 <Sprint
                   key={sprint.id}
-                  title={sprint.title}
                   sprintId={sprint.id}
-                  isDone={sprint.isDone}
-                  isActivate={sprint.isActivate}
-                  projectId={selectedProjectId}
-                  fetchBacklogs={() => fetchBacklogs(selectedProjectId)}
-                  fetchSprints={() => fetchSprints(selectedProjectId)}
-                  backlogItems={backlogItems}
-                  setBacklogItems={setBacklogItems}
-                  sprintItems={sprint.items}
-                  setSprintItems={setSprintItems}
                   showOnlyMyTasks={showOnlyMyTasks}
-                  memberId={memberId}
                 />
               ))}
             </SprintContainer>
             <BacklogContainer>
-              <Backlog
-                backlogItems={filteredBacklogs?.map((backlog) => ({
-                  id: backlog.backlogId,
-                  title: backlog.title,
-                  description: backlog.description,
-                  priority: backlog.priority,
-                  status: backlog.status,
-                  memberId: backlog.memberId,
-                  sprintId: backlog.sprintId,
-                }))}
-                setBacklogItems={setBacklogItems}
-                sprintItems={sprintItems}
-                setSprintItems={setSprintItems}
-              />
+              <Backlog showOnlyMyTasks={showOnlyMyTasks} />
             </BacklogContainer>
           </SprintSection>
         </ContentContainer>

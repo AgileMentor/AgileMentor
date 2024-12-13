@@ -1,65 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { FaTrash } from 'react-icons/fa';
 import { useDrop } from 'react-dnd';
 import axios from 'axios';
-// eslint-disable-next-line import/no-unresolved
-import BacklogBar from '@components/common/BacklogBar';
-// eslint-disable-next-line import/no-unresolved
-import SprintSettingModal from '@components/common/SprintSettingModal';
-// eslint-disable-next-line import/no-unresolved
-import BacklogModal from '@components/common/BacklogModal/index';
-// eslint-disable-next-line import/no-unresolved
-import SprintStartModal from '@components/common/SprintStartModal';
+import BacklogBar from '../BacklogBar';
+import SprintSettingModal from '../SprintSettingModal';
+import BacklogModal from '../BacklogModal';
+import SprintStartModal from '../SprintStartModal';
 import { useProjects } from '../../../provider/projectContext';
 
-const Sprint = ({
-  setSprintItems,
-  title,
-  sprintId,
-  projectId,
-  fetchSprints,
-  fetchBacklogs,
-  isDone,
-  isActivate,
-  showOnlyMyTasks,
-  memberId,
-}) => {
+const Sprint = ({ sprintId, showOnlyMyTasks }) => {
+  const {
+    fetchBacklogs,
+    fetchSprints,
+    selectedProjectId,
+    user,
+    backlogs,
+    sprints,
+    selectedBacklogId,
+    setselectedBacklogId,
+    selectedStoryIds,
+  } = useProjects();
+
+  const currentSprint = sprints.find((s) => s.id === sprintId) || {};
+
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [sprintDetails, setSprintDetails] = useState(null);
-  const { backlogs, members } = useProjects();
-  const [selectedBacklog, setSelectedBacklog] = useState(null);
 
-  useEffect(() => {
-    const fetchSprintItems = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}`,
-          { withCredentials: true },
-        );
-        setSprintItems(response.data.items);
-      } catch (error) {
-        console.error('스프린트 데이터 로드 실패:', error);
-      }
-    };
-    fetchSprintItems();
-  }, [projectId, sprintId, setSprintItems]);
-
-  useEffect(() => {
-    if (projectId && backlogs.length === 0) {
-      fetchBacklogs(projectId);
-    }
-  }, [fetchBacklogs]);
-
-  const sprintBacklogItems = backlogs.filter(
-    (backlog) => backlog.sprintId === sprintId,
+  const sprintBacklogItems = (backlogs || []).filter(
+    (backlog) => backlog && backlog.sprintId === sprintId,
   );
 
-  const filteredBacklogItems = showOnlyMyTasks
-    ? sprintBacklogItems.filter((backlog) => backlog.memberId === memberId)
-    : sprintBacklogItems;
+  const filteredBacklogItems = useMemo(() => {
+    let result = showOnlyMyTasks
+      ? sprintBacklogItems.filter(
+          (backlog) => backlog && backlog.memberId === user?.memberId,
+        )
+      : sprintBacklogItems;
+
+    if (selectedStoryIds.length > 0) {
+      result = result.filter((backlog) => selectedStoryIds.includes(backlog.storyId));
+    }
+
+    return result;
+  }, [sprintBacklogItems, showOnlyMyTasks, user, selectedStoryIds]);
 
   const handleCancelStart = () => {
     setIsStartModalOpen(false);
@@ -69,37 +54,20 @@ const Sprint = ({
     setIsEditModalOpen(false);
   };
 
-  const handleSave = () => {
-    setIsEditModalOpen(false);
-    fetchSprints();
-  };
-
-  const fetchSprintDetails = async () => {
-    try {
-      const response = await axios.get(
-        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}`,
-        { withCredentials: true },
-      );
-      setSprintDetails(response.data);
-      setIsEditModalOpen(true);
-    } catch (error) {
-      console.error('스프린트 세부 정보 요청 실패:', error);
-    }
-  };
-
   const deleteSprint = async () => {
-    if (!sprintId || !projectId) {
+    if (!sprintId || !selectedProjectId) {
       alert('스프린트 ID 또는 프로젝트 ID가 없습니다.');
       return;
     }
 
     try {
       await axios.delete(
-        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints/${sprintId}`,
         { withCredentials: true },
       );
       alert('스프린트가 성공적으로 삭제되었습니다.');
-      fetchSprints();
+      fetchSprints(selectedProjectId);
+      fetchBacklogs(selectedProjectId);
     } catch (error) {
       console.error('스프린트 삭제 중 오류 발생:', error);
       alert('스프린트를 삭제하는 데 실패했습니다.');
@@ -109,14 +77,15 @@ const Sprint = ({
   const completeSprint = async () => {
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/sprints/${sprintId}/complete`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints/${sprintId}/complete`,
         {},
         { withCredentials: true },
       );
 
       if (response.status === 200) {
         alert('스프린트가 성공적으로 완료되었습니다.');
-        fetchSprints();
+        fetchSprints(selectedProjectId);
+        fetchBacklogs(selectedProjectId);
       }
     } catch (error) {
       console.error('스프린트 완료 요청 실패:', error);
@@ -126,41 +95,20 @@ const Sprint = ({
 
   const moveToSprint = async (item, targetSprintId) => {
     const { ...updatedBacklog } = { ...item, sprintId: targetSprintId };
-    console.log(updatedBacklog);
 
     try {
       const response = await axios.put(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${item.id}`,
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/backlogs/${item.backlogId}`,
         updatedBacklog,
         { withCredentials: true },
       );
 
       if (response.status === 200) {
-        fetchBacklogs(projectId);
-        fetchSprints(projectId);
+        fetchBacklogs(selectedProjectId);
       }
     } catch (error) {
       console.error('백로그 이동 중 오류 발생:', error);
       alert('백로그를 스프린트로 이동하는 데 실패했습니다.');
-    }
-  };
-
-  const deleteBacklog = async (backlogId) => {
-    if (!backlogId || !projectId) {
-      alert('백로그 ID 또는 프로젝트 ID가 없습니다.');
-      return;
-    }
-
-    try {
-      await axios.delete(
-        `https://api.agilementor.kr/api/projects/${projectId}/backlogs/${backlogId}`,
-        { withCredentials: true },
-      );
-      alert('백로그가 성공적으로 삭제되었습니다.');
-      fetchBacklogs(projectId);
-    } catch (error) {
-      console.error('백로그 삭제 중 오류 발생:', error);
-      alert('백로그 삭제에 실패했습니다.');
     }
   };
 
@@ -172,7 +120,7 @@ const Sprint = ({
     }),
   }));
 
-  if (isDone) {
+  if (currentSprint.isDone) {
     return null;
   }
 
@@ -181,14 +129,14 @@ const Sprint = ({
       ref={drop}
       isOver={isOver}
       onClick={(e) => {
-        if (isEditModalOpen || isStartModalOpen || selectedBacklog) return;
+        if (isEditModalOpen || isStartModalOpen || selectedBacklogId) return;
         e.stopPropagation();
-        fetchSprintDetails();
+        setIsEditModalOpen(true);
       }}
     >
       <Header>
         <HeaderLeft>
-          <HeaderTitle>{title || '스프린트'}</HeaderTitle>
+          <HeaderTitle>{currentSprint.title || '스프린트'}</HeaderTitle>
           <DeleteButton
             onClick={(e) => {
               e.stopPropagation();
@@ -199,7 +147,7 @@ const Sprint = ({
             삭제
           </DeleteButton>
         </HeaderLeft>
-        {isActivate ? (
+        {currentSprint.isActivate ? (
           <CompleteButton
             onClick={(e) => {
               e.stopPropagation();
@@ -221,76 +169,29 @@ const Sprint = ({
       </Header>
       <SprintContent>
         {filteredBacklogItems.map((item) => (
-          <BacklogBar
-            key={item.id}
-            id={item.backlogId}
-            title={item.title}
-            priority={item.priority}
-            status={item.status}
-            memberId={item.memberId}
-            description={item.description}
-            fetchBacklogs={fetchBacklogs}
-            projectId={projectId}
-            onDelete={() => {
-              deleteBacklog(item.backlogId);
-            }}
-            onClick={(data) => {
-              setSelectedBacklog(data);
-            }}
-          />
+          <BacklogBar key={item.backlogId} backlogId={item.backlogId} />
         ))}
         <AddTask>+ 작업 만들기</AddTask>
       </SprintContent>
 
       {isStartModalOpen && (
-        <SprintStartModal
-          onCancel={handleCancelStart}
-          projectId={projectId}
-          sprintId={sprintId}
-          fetchSprints={() => {
-            fetchSprints();
-          }}
-        />
+        <SprintStartModal onCancel={handleCancelStart} sprintId={sprintId} />
       )}
 
-      {isEditModalOpen && sprintDetails && (
-        <SprintSettingModal
-          onCancel={handleCancelEdit}
-          onSave={handleSave}
-          projectId={projectId}
-          sprintId={sprintId}
-          initialData={{
-            title: sprintDetails.title,
-            goal: sprintDetails.goal,
-            startDate: sprintDetails.startDate,
-            endDate: sprintDetails.endDate,
-          }}
-        />
+      {isEditModalOpen && currentSprint && (
+        <SprintSettingModal onCancel={handleCancelEdit} sprintId={sprintId} />
       )}
 
-      {selectedBacklog && (
-        <BacklogModal
-          backlog={selectedBacklog}
-          members={members}
-          onCancel={() => setSelectedBacklog(null)}
-          fetchBacklogs={fetchBacklogs}
-        />
+      {selectedBacklogId && (
+        <BacklogModal onCancel={() => setselectedBacklogId(null)} />
       )}
     </SprintContainer>
   );
 };
 
 Sprint.propTypes = {
-  setSprintItems: PropTypes.func.isRequired,
-  title: PropTypes.string.isRequired,
   sprintId: PropTypes.number.isRequired,
-  projectId: PropTypes.number.isRequired,
-  fetchSprints: PropTypes.func.isRequired,
-  fetchBacklogs: PropTypes.func.isRequired,
-  isDone: PropTypes.bool.isRequired,
-  isActivate: PropTypes.bool.isRequired,
   showOnlyMyTasks: PropTypes.bool.isRequired,
-  memberId: PropTypes.number.isRequired,
 };
 
 export default Sprint;
