@@ -93,10 +93,15 @@ const BacklogModal = ({ onCancel }) => {
             <Column>
               <Label>담당자 선택</Label>
               <Select
-                value={backlog.memberId || ''}
-                onChange={(e) => setBacklog({ ...backlog, memberId: e.target.value })}
+                value={backlog.memberId === null ? 'none' : backlog.memberId}
+                onChange={(e) =>
+                  setBacklog({
+                    ...backlog,
+                    memberId: e.target.value === 'none' ? null : e.target.value,
+                  })
+                }
               >
-                <option value="">선택하기</option>
+                <option value="none">담당자가 없는 백로그</option>
                 {members.map((member) => (
                   <option key={member.memberId} value={member.memberId}>
                     {member.name}
@@ -152,7 +157,7 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
