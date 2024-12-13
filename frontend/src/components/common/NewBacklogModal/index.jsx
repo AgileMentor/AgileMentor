@@ -7,9 +7,8 @@ import { useProjects } from '../../../provider/projectContext';
 const NewBacklogModal = ({
   onCancel,
   onConfirm,
-  stories,
 }) => {
-  const { fetchBacklogs, selectedProjectId, members } = useProjects();
+  const { fetchBacklogs, selectedProjectId, members, stories } = useProjects();
   const [backlogName, setBacklogName] = useState('');
   const [story, setStory] = useState('');
   const [description, setDescription] = useState('');
@@ -27,8 +26,8 @@ const NewBacklogModal = ({
         title: backlogName,
         description,
         priority: priority.toUpperCase(),
-        ...(story && { storyId: story }),
-        ...(assignee && { memberId: assignee }),
+        ...(story && story !== 'none' && { storyId: story }),
+        ...(assignee && assignee !== 'none' && { memberId: assignee }),
       };
 
       await axios.post(
@@ -64,10 +63,14 @@ const NewBacklogModal = ({
 
         <InputContainer>
           <Label>상위 스토리</Label>
-          <Select value={story} onChange={(e) => setStory(e.target.value)}>
-            <option value="">스토리 선택하기</option>
+          <Select
+            value={story}
+            onChange={(e) => setStory(e.target.value)}
+          >
+            <option value="" disabled>선택하기</option>
+            <option value="none">상위 스토리가 없는 백로그</option>
             {stories.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option key={s.storyId} value={s.storyId}>
                 {s.title}
               </option>
             ))}
@@ -90,11 +93,11 @@ const NewBacklogModal = ({
               <Select
                 value={assignee}
                 onChange={(e) => {
-                  console.log('선택된 담당자 ID:', e.target.value);
                   setAssignee(e.target.value);
                 }}
               >
-                <option value="">선택하기</option>
+                <option value="" disabled>선택하기</option>
+                <option value="none">담당자가 없는 백로그</option>
                 {members.map((user) => (
                   <option key={user.memberId} value={user.memberId}>
                     {user.name}
@@ -108,7 +111,7 @@ const NewBacklogModal = ({
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
               >
-                <option value="">선택하기</option>
+                <option value="" disabled>선택하기</option>
                 <option value="HIGH">높음</option>
                 <option value="MEDIUM">중간</option>
                 <option value="LOW">낮음</option>
@@ -129,12 +132,6 @@ const NewBacklogModal = ({
 NewBacklogModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
-  // eslint-disable-next-line react/forbid-prop-types
-  stories: PropTypes.arrayOf(PropTypes.object),
-};
-
-NewBacklogModal.defaultProps = {
-  stories: [],
 };
 
 export default NewBacklogModal;
