@@ -35,7 +35,9 @@ const Story = () => {
         `https://api.agilementor.kr/api/projects/${selectedProjectId}/stories/${storyId}`,
         { withCredentials: true }
       );
-      toggleSelectStory(storyId);
+      if (selectedStoryIds.includes(storyId)) {
+        toggleSelectStory(storyId);
+      }
       alert('스토리가 성공적으로 삭제되었습니다.');
       fetchStories(selectedProjectId);
     } catch (error) {
