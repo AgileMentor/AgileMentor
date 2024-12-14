@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Paper, Divider } from '@mui/material';
 // eslint-disable-next-line import/no-unresolved
 import HelpComponent from '@components/common/HelpComponent';
@@ -11,30 +11,13 @@ import AgileNotesList from '../../components/common/AgileNotesList';
 import { useProjects } from '../../provider/projectContext';
 
 const DashboardPage = () => {
-  const { fetchUser, user } = useProjects();
+  const { user } = useProjects();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        await fetchUser();
-        console.log('User information fetched successfully.');
-      } catch (err) {
-        console.error('Error fetching user information:', err);
-      }
-    };
-
-    fetchUserInfo();
-  }, [fetchUser]);
-
-  if (!user) {
-    return <Typography variant="h5">사용자 정보를 불러오는 중...</Typography>;
-  }
-
-  const userName = user.name || '사용자';
+  const userName = user?.name || '사용자';
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh-9vh' }}>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 9vh)' }}>
       <Box
         component="main"
         sx={{
@@ -52,7 +35,7 @@ const DashboardPage = () => {
             flexDirection: 'column',
             alignItems: 'flex-start',
             mb: 3,
-            padding: '0 3vw',
+            padding: '0 2vw',
           }}
         >
           <Typography

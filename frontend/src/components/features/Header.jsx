@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 import axios from 'axios';
 // eslint-disable-next-line import/no-unresolved
 import { Common } from '@styles/globalStyle';
@@ -11,13 +11,26 @@ import { useProjects } from '../../provider/projectContext';
 export const HEADER_HEIGHT = '9vh';
 
 const Header = () => {
-  const { user, fetchProjects } = useProjects();
+  const { user, fetchUser, fetchProjects } = useProjects();
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
   const [invitations, setInvitations] = useState([]);
+  const navigate = useNavigate();
   const open = Boolean(anchorEl);
   const profileOpen = Boolean(profileAnchorEl);
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        await fetchUser();
+        console.log('User information fetched successfully.');
+      } catch (err) {
+        console.error('Error fetching user information:', err);
+      }
+    };
+
+    fetchUserInfo();
+  }, [fetchUser]);
 
   const removeInvitation = (invitationId) => {
     setInvitations((prev) => prev.filter((inv) => inv.invitationId !== invitationId));
