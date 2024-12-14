@@ -84,7 +84,6 @@ public class GPTService {
         logger.info("Received GPT API Response: {}", gptResponse);
 
         String content = gptResponse.getChoices()[0].getMessage().getContent();
-        System.out.println("GPT Response Content: " + content);
 
         // ```json과 ```를 제거
         String sanitizedResponse = content.replaceAll("^```json|```$", "").trim();
@@ -136,6 +135,9 @@ public class GPTService {
             1. 유저 스토리: 제목과 설명을 포함하세요.
             2. 작업(Task): 각 유저 스토리에 대해 작업 목록을 적당한 개수로 생성하고, 각 작업에는 제목, 설명, 우선순위(Values: "HIGH", "MEDIUM", "LOW"), 스프린트를 포함하세요. 우선순위는 작업의 중요도에 따라 세 가지 순위 중에 설정하세요.
             3. 스프린트: 제목, 목표를 포함하세요.
+            
+            주의사항1:스프린트는 하나의 스토리에 국한되지 않습니다. 생성된 작업 목록을 모든 스프린트에 적절히 분배하여 최적의 스프린트 계획을 수립해주세요.
+            주의사항2:각 스프린트에는 한 개 이상의 작업이 필수로 할당되어야 합니다.
             
             다음 형식의 순수 JSON 데이터로만 응답하세요:
             {
