@@ -184,10 +184,10 @@ public class BacklogService {
 
     public List<BacklogGetResponse> getTasks(Long memberId) {
 
-        List<ProjectMember> projectMemberList = projectMemberRepository.findByMemberId(memberId);
-
         Member member = memberRepository.findById(memberId)
             .orElseThrow(MemberNotFoundException::new);
+
+        List<ProjectMember> projectMemberList = projectMemberRepository.findByMemberId(memberId);
 
         Stream<Sprint> activeSprints = projectMemberList.stream()
             .map(projectMember -> sprintRepository
