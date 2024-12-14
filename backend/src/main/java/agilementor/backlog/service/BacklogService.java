@@ -154,7 +154,7 @@ public class BacklogService {
             assignee = projectMember.getMember();
         }
 
-        backlog.update(title, description, status, priority, project, sprint, story, assignee);
+        backlog.update(title, description, status, priority, sprint, story, assignee);
 
         return BacklogUpdateResponse.from(backlog);
     }

@@ -125,12 +125,9 @@ class StoryServiceTest {
         Backlog doneBacklog3 = new Backlog("title", "desc", Priority.MEDIUM, project, null, story3,
             null);
 
-        doneBacklog1.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story2,
-            member);
-        doneBacklog2.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story3,
-            member);
-        doneBacklog3.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story3,
-            member);
+        doneBacklog1.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story2, member);
+        doneBacklog2.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story3, member);
+        doneBacklog3.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story3, member);
 
         given(projectMemberRepository.findByMemberIdAndProjectId(memberId, projectId))
             .willReturn(Optional.of(projectMember));
@@ -202,12 +199,9 @@ class StoryServiceTest {
         Backlog doneBacklog3 = new Backlog("title", "desc", Priority.MEDIUM, project, null, story3,
             null);
 
-        doneBacklog1.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story2,
-            member);
-        doneBacklog2.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story3,
-            member);
-        doneBacklog3.update("title", "desc", Status.DONE, Priority.MEDIUM, project, null, story3,
-            member);
+        doneBacklog1.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story2, member);
+        doneBacklog2.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story3, member);
+        doneBacklog3.update("title", "desc", Status.DONE, Priority.MEDIUM, null, story3, member);
 
         given(projectMemberRepository.findByMemberIdAndProjectId(memberId, projectId))
             .willReturn(Optional.of(projectMember));
