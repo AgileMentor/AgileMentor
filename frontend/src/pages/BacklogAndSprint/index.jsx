@@ -33,6 +33,14 @@ const BacklogAndSprintPage = () => {
     }
   }, [selectedProjectId, fetchSprints, fetchBacklogs]);
 
+  if (!selectedProjectId) {
+    return (
+      <EmptyContainer>
+        <Message>프로젝트를 선택해주세요.</Message>
+      </EmptyContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <MainContent>
@@ -230,4 +238,19 @@ const BacklogContainer = styled.div`
   border-radius: 8px;
   flex-direction: column;
   gap: 1rem;
+`;
+
+const EmptyContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 9vh);
+  background-color: #fafafa;
+  color: #333;
+`;
+
+const Message = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #555;
 `;
