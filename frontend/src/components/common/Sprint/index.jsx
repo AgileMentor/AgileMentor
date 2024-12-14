@@ -21,6 +21,7 @@ const Sprint = ({ sprintId, showOnlyMyTasks }) => {
     selectedBacklogId,
     setselectedBacklogId,
     selectedStoryIds,
+    isSprintActive,
   } = useProjects();
 
   const currentSprint = sprints.find((s) => s.id === sprintId) || {};
@@ -158,12 +159,14 @@ const Sprint = ({ sprintId, showOnlyMyTasks }) => {
           </CompleteButton>
         ) : (
           <StartButton
+            disabled={isSprintActive}
             onClick={(e) => {
+              if (isSprintActive) return;
               e.stopPropagation();
               setIsStartModalOpen(true);
             }}
           >
-            스프린트 시작
+            {isSprintActive ? '진행 중 스프린트 있음' : '스프린트 시작'}
           </StartButton>
         )}
       </Header>

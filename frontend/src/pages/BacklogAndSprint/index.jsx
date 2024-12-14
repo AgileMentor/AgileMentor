@@ -13,7 +13,7 @@ import HelpComponent from '@components/common/HelpComponent';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
-  const { projects, selectedProjectId, fetchSprints, fetchBacklogs, sprints } =
+  const { projects, selectedProjectId, fetchSprints, fetchBacklogs, sprints, setIsSprintActive } =
     useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
@@ -29,6 +29,11 @@ const BacklogAndSprintPage = () => {
       fetchBacklogs(selectedProjectId);
     }
   }, [selectedProjectId, fetchSprints, fetchBacklogs]);
+
+  useEffect(() => {
+    const activeSprintExists = sprints.some((sprint) => sprint.isActivate);
+    setIsSprintActive(activeSprintExists);
+  }, [sprints]);
 
   if (!selectedProjectId) {
     return (
@@ -59,7 +64,7 @@ const BacklogAndSprintPage = () => {
                 내 작업만 보기
               </MyTasksButton>
               <AIRecommendationButton
-                onClick={() => setIsAIModalOpen(true)} // 버튼 클릭 시 모달 열림
+                onClick={() => setIsAIModalOpen(true)}
               >
                 <StarIcon>⭐</StarIcon>
                 AI 추천

@@ -140,7 +140,7 @@ const DashboardPage = () => {
               <Divider sx={{ mb: 0 }} />
             </Box>
             <Box sx={{ p: 2, pt: 1, overflowY: 'auto', flexGrow: 1 }}>
-              <OngoingTasksList memberId={301} />
+              <OngoingTasksList />
             </Box>
           </Paper>
         </Box>

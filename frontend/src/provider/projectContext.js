@@ -21,6 +21,7 @@ export const ProjectProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [stories, setStories] = useState([]);
   const [selectedStoryIds, setSelectedStoryIds] = useState([]);
+  const [isSprintActive, setIsSprintActive] = useState(false);
 
   const toggleSelectStory = useCallback((id) => {
     setSelectedStoryIds((prevIds) =>
@@ -180,7 +181,9 @@ export const ProjectProvider = ({ children }) => {
       fetchStories,
       selectedStoryIds,
       toggleSelectStory,
-      addAIResponseData
+      addAIResponseData,
+      isSprintActive,
+      setIsSprintActive
     }),
     [
       projects,
@@ -193,6 +196,7 @@ export const ProjectProvider = ({ children }) => {
       stories,
       selectedStoryIds,
       toggleSelectStory,
+      isSprintActive
     ],
   );
 
