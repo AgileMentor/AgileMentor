@@ -6,6 +6,8 @@ import Story from '@components/common/Story/index';
 import Sprint from '@components/common/Sprint/index';
 // eslint-disable-next-line import/no-unresolved
 import Backlog from '@components/common/Backlog/index';
+// eslint-disable-next-line import/no-unresolved
+import AIModal from '@components/common/AIModal';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
@@ -18,6 +20,7 @@ const BacklogAndSprintPage = () => {
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
@@ -29,6 +32,14 @@ const BacklogAndSprintPage = () => {
       fetchBacklogs(selectedProjectId);
     }
   }, [selectedProjectId, fetchSprints, fetchBacklogs]);
+
+  if (!selectedProjectId) {
+    return (
+      <EmptyContainer>
+        <Message>프로젝트를 선택해주세요.</Message>
+      </EmptyContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -49,7 +60,9 @@ const BacklogAndSprintPage = () => {
                 <Checkbox type="checkbox" checked={showOnlyMyTasks} readOnly />
                 내 작업만 보기
               </MyTasksButton>
-              <AIRecommendationButton>
+              <AIRecommendationButton
+                onClick={() => setIsAIModalOpen(true)} // 버튼 클릭 시 모달 열림
+              >
                 <StarIcon>⭐</StarIcon>
                 AI 추천
               </AIRecommendationButton>
@@ -69,6 +82,11 @@ const BacklogAndSprintPage = () => {
           </SprintSection>
         </ContentContainer>
       </MainContent>
+      {isAIModalOpen && (
+        <AIModal
+          onCancel={() => setIsAIModalOpen(false)}
+        />
+      )}
     </PageContainer>
   );
 };
@@ -220,4 +238,19 @@ const BacklogContainer = styled.div`
   border-radius: 8px;
   flex-direction: column;
   gap: 1rem;
+`;
+
+const EmptyContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 9vh);
+  background-color: #fafafa;
+  color: #333;
+`;
+
+const Message = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #555;
 `;

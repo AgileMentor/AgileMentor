@@ -5,19 +5,24 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 
 const KanbanCard = ({ title, status, titleFontSize, onChangeStatus }) => {
-  const handleStatusChange = (direction) => {
+  const handleStatusChange = async (direction) => {
+    let newStatus = status;
     if (direction === 'forward') {
-      if (status === 'todo') {
-        onChangeStatus('inprogress');
-      } else if (status === 'inprogress') {
-        onChangeStatus('done');
+      if (status === 'TODO') {
+        newStatus = 'IN_PROGRESS';
+      } else if (status === 'IN_PROGRESS') {
+        newStatus = 'DONE';
       }
     } else if (direction === 'backward') {
-      if (status === 'inprogress') {
-        onChangeStatus('todo');
-      } else if (status === 'done') {
-        onChangeStatus('inprogress');
+      if (status === 'IN_PROGRESS') {
+        newStatus = 'TODO';
+      } else if (status === 'DONE') {
+        newStatus = 'IN_PROGRESS';
       }
+    }
+
+    if (newStatus !== status) {
+      await onChangeStatus(newStatus);
     }
   };
 
@@ -40,7 +45,7 @@ const KanbanCard = ({ title, status, titleFontSize, onChangeStatus }) => {
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', gap: 1 }}>
-        {(status === 'inprogress' || status === 'done') && (
+        {(status === 'IN_PROGRESS' || status === 'DONE') && (
           <IconButton
             size="small"
             sx={{ backgroundColor: '#f8bbd0' }}
@@ -49,7 +54,7 @@ const KanbanCard = ({ title, status, titleFontSize, onChangeStatus }) => {
             <ArrowBackRoundedIcon sx={{ color: '#ffffff' }} fontSize="small" />
           </IconButton>
         )}
-        {(status === 'todo' || status === 'inprogress') && (
+        {(status === 'TODO' || status === 'IN_PROGRESS') && (
           <IconButton
             size="small"
             sx={{ backgroundColor: '#f8bbd0' }}
