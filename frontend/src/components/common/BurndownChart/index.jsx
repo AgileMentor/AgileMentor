@@ -1,26 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Box, Paper, Typography } from '@mui/material';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { LineChart } from '@mui/x-charts';
-import mockSprints from '../../../mocks/mockSprints';
+import { useProjects } from '../../../provider/projectContext';
 
 const BurndownChart = () => {
-  const totalTasks = 50;
-  const pData = mockSprints.map((sprint) => sprint.completed_tasks_count);
-  const xLabels = mockSprints.map((sprint) => sprint.end_date);
+  const { selectedProjectId } = useProjects();
+  const [sprintData, setSprintData] = useState([]);
 
-  const remainingData = [];
-  let cumulativeCompleted = 0;
-  pData.forEach((completed) => {
-    cumulativeCompleted += completed;
-    remainingData.push(totalTasks - cumulativeCompleted);
-  });
+  const fetchBurndownData = async () => {
+    const apiUrl = `https://api.agilementor.kr/api/projects/${selectedProjectId}/sprints/burndown`;
+
+    try {
+      const response = await axios.get(apiUrl, {
+        withCredentials: true,
+      });
+      setSprintData(response.data);
+    } catch (error) {
+      console.error('Error fetching burndown data:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchBurndownData();
+    }
+  }, [selectedProjectId]);
+
+  const completedData = sprintData.map((sprint) => sprint.completedInSprint);
+  const remainingData = sprintData.map((sprint) => sprint.remainingBacklogs);
+
+  const xLabels = sprintData.map(
+    (sprint, index) => `${sprint.endDate} (#${index + 1})`
+  );
 
   return (
     <Box
       sx={{
-        height: '65vh',
-        width: '71vw',
+        height: '70vh',
+        width: '75vw',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -40,7 +59,7 @@ const BurndownChart = () => {
         elevation={3}
       >
         <Typography variant="h6" sx={{ fontSize: '35px', marginTop: '10px' }}>
-          Burndown Chart
+          번다운 차트
         </Typography>
         <Box
           sx={{
@@ -52,11 +71,11 @@ const BurndownChart = () => {
           }}
         >
           <LineChart
-            width={1000}
-            height={450}
+            width={window.innerWidth * 0.9}
+            height={window.innerHeight * 0.75}
             series={[
-              { data: pData, label: 'Completed Tasks' },
-              { data: remainingData, label: 'Remaining Tasks' },
+              { data: completedData, label: '완료된 작업' },
+              { data: remainingData, label: '남은 백로그' },
             ]}
             xAxis={[{ scaleType: 'point', data: xLabels }]}
             yAxis={[{ min: 0 }]}
