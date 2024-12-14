@@ -5,7 +5,7 @@ const GoogleLoginButton = () => {
   const handleLoginClick = async () => {
     try {
       const response = await fetch(
-        'https://api.agilementor.kr//api/auth/login',
+        'https://api.agilementor.kr/api/auth/login',
         {
           method: 'GET',
           headers: {
