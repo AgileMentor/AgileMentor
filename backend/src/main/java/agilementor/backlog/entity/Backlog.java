@@ -99,10 +99,6 @@ public class Backlog {
         return priority;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
-    }
-
     public void setSprint(Sprint sprint) {
         this.sprint = sprint;
     }
