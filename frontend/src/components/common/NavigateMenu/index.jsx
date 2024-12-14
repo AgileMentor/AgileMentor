@@ -17,13 +17,13 @@ const NavigateMenu = () => {
         <Icon as={FaThList} />
         <MenuText>칸반보드</MenuText>
       </MenuItem>
-      <MenuItem onClick={() => navigate('/agilestudy')}>
-        <Icon as={FaBook} />
-        <MenuText>애자일 학습하기</MenuText>
-      </MenuItem>
       <MenuItem onClick={() => navigate('/burndown')}>
         <Icon as={FaChartLine} />
         <MenuText>번다운 차트</MenuText>
+      </MenuItem>
+      <MenuItem onClick={() => navigate('/agilestudy')}>
+        <Icon as={FaBook} />
+        <MenuText>애자일 학습하기</MenuText>
       </MenuItem>
     </Container>
   );
