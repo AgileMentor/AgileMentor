@@ -63,21 +63,23 @@ const SideBar = () => {
         <NavigateMenu />
       </NavigateMenuWrapper>
       {selectedProjectId && (
-        <MemberWrapper>
-          <Member members={members} isAdmin={isAdmin} />
-        </MemberWrapper>
+        <>
+          <MemberWrapper>
+            <Member members={members} isAdmin={isAdmin} />
+          </MemberWrapper>
+          <DividerWrapper>
+            {isAdmin && (
+              <SettingButtonWrapper>
+                <SettingButton />
+              </SettingButtonWrapper>
+            )}
+            <Divider />
+            <LogoutButtonWrapper>
+              <LogoutButton members={members} projectId={selectedProjectId} />
+            </LogoutButtonWrapper>
+          </DividerWrapper>
+        </>
       )}
-      <DividerWrapper>
-        {isAdmin && (
-          <SettingButtonWrapper>
-            <SettingButton />
-          </SettingButtonWrapper>
-        )}
-        <Divider />
-        <LogoutButtonWrapper>
-          <LogoutButton members={members} projectId={selectedProjectId} />
-        </LogoutButtonWrapper>
-      </DividerWrapper>
     </SidebarContainer>
   );
 };
@@ -85,6 +87,7 @@ const SideBar = () => {
 export default SideBar;
 
 const SidebarContainer = styled.div`
+  position: relative;
   background-color: #fff;
   width: 18vw;
   display: flex;
@@ -139,18 +142,22 @@ const MemberWrapper = styled.div`
 `;
 
 const DividerWrapper = styled.div`
+  position: absolute;
+  bottom: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0;
+  background-color: #fff;
+  padding-bottom: 2vh;
 `;
 
 const Divider = styled.div`
   width: 100%;
   height: 0.2vh;
   background-color: #eaeaea;
-  margin-bottom: 2vh;
+  margin-bottom: 0.5vh;
 `;
 
 const LogoutButtonWrapper = styled.div`
@@ -164,5 +171,5 @@ const SettingButtonWrapper = styled.div`
   width: 50%;
   display: flex;
   justify-content: center;
-  margin-bottom: 2vh;
+  margin-bottom: 1.5vh;
 `;
