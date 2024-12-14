@@ -193,7 +193,12 @@ const Header = () => {
           onClose={handleClose}
           slotProps={{
             paper: {
-              style: { width: '300px' },
+              style: {
+                width: '300px',
+                borderRadius: '10px',
+                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                padding: '8px',
+              },
             },
           }}
         >
@@ -278,7 +283,7 @@ const HeaderContainer = styled.header`
   height: ${HEADER_HEIGHT};
   background-color: ${Common.colors.primary};
   box-shadow: 0px 0.4vh 0.6vh rgba(0, 0, 0, 0.1);
-  z-index: 9999;
+  z-index: 1000;
   position: relative;
   padding: 0 20px;
 `;
