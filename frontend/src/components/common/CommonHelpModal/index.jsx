@@ -57,14 +57,14 @@ const CommonHelpModal = ({ onCancel }) => (
           </Description>
         </Section>
         <Section>
-          <FeatureTitle>기능 5 - 멤버 관리하기기</FeatureTitle>
+          <FeatureTitle>기능 5 - 멤버 관리하기</FeatureTitle>
           <Image
             src="/image/member.png"
             alt="Member"
             style={{ height: '90px', width: '250px' }}
           />
           <Description>
-            현재 프로젝트에 참가중인 멤버를 확인할 수 있습니다.
+            현재 프로젝트에 참가 중인 멤버를 확인할 수 있습니다.
           </Description>
           <Image
             src="/image/inviteMember.png"
@@ -76,14 +76,14 @@ const CommonHelpModal = ({ onCancel }) => (
           </Description>
         </Section>
         <Section>
-          <FeatureTitle>기능 6 - 프로젝트트 관리하기</FeatureTitle>
+          <FeatureTitle>기능 6 - 프로젝트 관리하기</FeatureTitle>
           <Image
             src="/image/setting.png"
             alt="setting"
             style={{ height: '200px', width: '250px' }}
           />
           <Description>
-            선택된 프로젝트를 수정하거나 삭제제할 수 있습니다.
+            선택된 프로젝트를 수정하거나 삭제할 수 있습니다.
           </Description>
           <Image
             src="/image/settingDelete.png"
