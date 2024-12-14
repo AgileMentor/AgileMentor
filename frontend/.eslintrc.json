@@ -35,7 +35,8 @@
           "function-expression"
         ]
       }
-    ]
+    ],
+    "no-multi-assign": "off" // 추가된 규칙
   },
   "settings": {
     "import/resolver": {
