@@ -1,5 +1,6 @@
 package agilementor.project.service;
 
+import agilementor.backlog.entity.Backlog;
 import agilementor.backlog.repository.BacklogRepository;
 import agilementor.backlog.repository.StoryRepository;
 import agilementor.common.exception.MemberNotFoundException;
@@ -101,6 +102,14 @@ public class ProjectService {
     public void leaveProject(Long memberId, Long projectId) {
 
         ProjectMember projectMember = getProjectMember(memberId, projectId);
+
+        Member member = projectMember.getMember();
+        Project project = projectMember.getProject();
+
+        List<Backlog> backlogList = backlogRepository.findByAssigneeAndProject(member, project);
+        backlogList.stream()
+            .filter(Backlog::isNotDone)
+            .forEach(Backlog::deleteAssignee);
 
         projectMemberRepository.delete(projectMember);
     }

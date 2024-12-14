@@ -6,6 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
+import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.entity.Priority;
+import agilementor.backlog.entity.Status;
 import agilementor.backlog.repository.BacklogRepository;
 import agilementor.backlog.repository.StoryRepository;
 import agilementor.common.exception.NotProjectAdminException;
@@ -281,14 +284,34 @@ class ProjectServiceTest {
         Project project = new Project("title");
         ProjectMember projectMember = new ProjectMember(project, member, true);
 
+        Backlog backlog1 = new Backlog("backlog1", "backlog1", Priority.MEDIUM, project, null, null,
+            member);
+        Backlog backlog2 = new Backlog("backlog2", "backlog2", Priority.MEDIUM, project, null, null,
+            member);
+        backlog2.update("backlog2", "backlog2", Status.IN_PROGRESS, Priority.MEDIUM, project, null,
+            null, member);
+        Backlog backlog3 = new Backlog("backlog3", "backlog3", Priority.MEDIUM, project, null, null,
+            member);
+        backlog3.update("backlog3", "backlog3", Status.DONE, Priority.MEDIUM, project, null, null,
+            member);
+        List<Backlog> backlogs = List.of(backlog1, backlog2, backlog3);
+
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))
             .willReturn(Optional.of(projectMember));
+        given(backlogRepository.findByAssigneeAndProject(member, project))
+            .willReturn(backlogs);
 
         // when
         projectService.leaveProject(1L, 1L);
 
         // then
         then(projectMemberRepository).should().delete(projectMember);
+        assertThat(backlog1.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog1.getAssignee()).isNull();
+        assertThat(backlog2.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog2.getAssignee()).isNull();
+        assertThat(backlog3.getStatus()).isEqualTo(Status.DONE);
+        assertThat(backlog3.getAssignee()).isEqualTo(member);
     }
 
     @Test
