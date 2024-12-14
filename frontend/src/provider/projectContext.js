@@ -141,6 +141,19 @@ export const ProjectProvider = ({ children }) => {
     }
   }, []);
 
+  const addAIResponseData = useCallback((responseData) => {
+    if (!responseData) {
+      console.warn('AI 응답 데이터가 없습니다.');
+      return;
+    }
+  
+    const { sprints: newSprints, backlogs: newBacklogs, stories: newStories } = responseData;
+  
+    setSprints((prevSprints) => [...prevSprints, ...(newSprints || [])]);
+    setBacklogs((prevBacklogs) => [...prevBacklogs, ...(newBacklogs || [])]);
+    setStories((prevStories) => [...prevStories, ...(newStories || [])]);
+  }, []);
+
   const contextValue = useMemo(
     () => ({
       projects,
@@ -167,6 +180,7 @@ export const ProjectProvider = ({ children }) => {
       fetchStories,
       selectedStoryIds,
       toggleSelectStory,
+      addAIResponseData
     }),
     [
       projects,

@@ -1,11 +1,60 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import axios from 'axios';
+import { useProjects } from '../../../provider/projectContext';
 
-const AIModal = ({ onCancel, onConfirm }) => {
+
+const AIModal = ({ onCancel }) => {
+  const { selectedProjectId, addAIResponseData, fetchStories, fetchBacklogs, fetchSprints } = useProjects();
   const [projectDescription, setProjectDescription] = useState('');
   const [storyCount, setStoryCount] = useState('');
   const [sprintCount, setSprintCount] = useState('');
+  const [loading, setLoading] = useState(false); 
+
+  const handleConfirm = async () => {
+    if (!projectDescription || !storyCount || !sprintCount) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    if (!selectedProjectId) {
+      alert('선택된 프로젝트가 없습니다.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `https://api.agilementor.kr/api/projects/${selectedProjectId}/ai/generate-task`,
+        {
+          projectDescription,
+          storyCount: parseInt(storyCount, 10),
+          taskCount: parseInt(sprintCount, 10),
+        },
+        {
+          headers: {
+            Cookie: document.cookie,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 201 || response.status === 200) {
+        console.log('AI 추천 생성 응답:', response.data);
+        addAIResponseData(response.data);
+        fetchSprints(selectedProjectId);
+        fetchBacklogs(selectedProjectId);
+        fetchStories(selectedProjectId);
+        onCancel();
+      }
+    } catch (error) {
+      console.error('AI 추천 생성 중 오류 발생:', error);
+      alert('AI 추천 생성에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ModalOverlay>
@@ -15,7 +64,7 @@ const AIModal = ({ onCancel, onConfirm }) => {
         <InputContainer>
           <Label>프로젝트 설명</Label>
           <StyledTextArea
-            placeholder="프로젝트 설명을 적어주세요."
+            placeholder="프로젝트 설명을 입력해주세요."
             value={projectDescription}
             onChange={(e) => setProjectDescription(e.target.value)}
           />
@@ -43,8 +92,12 @@ const AIModal = ({ onCancel, onConfirm }) => {
         </InputContainer>
 
         <ButtonContainer>
-          <CancelButton onClick={onCancel}>취소</CancelButton>
-          <ConfirmButton onClick={onConfirm}>완료</ConfirmButton>
+          <CancelButton onClick={onCancel} disabled={loading}>
+            취소
+          </CancelButton>
+          <ConfirmButton onClick={handleConfirm} disabled={loading}>
+            {loading ? '처리 중...' : '완료'}
+          </ConfirmButton>
         </ButtonContainer>
       </ModalContainer>
     </ModalOverlay>
@@ -53,7 +106,6 @@ const AIModal = ({ onCancel, onConfirm }) => {
 
 AIModal.propTypes = {
   onCancel: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
 };
 
 export default AIModal;
@@ -110,12 +162,12 @@ const Label = styled.label`
 
 const StyledTextArea = styled.textarea`
   width: 100%;
-  height: 80px; /* 높이를 조정하여 여러 줄이 보이도록 설정 */
+  height: 80px;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 14px;
-  resize: none; /* 크기 조절 비활성화 */
+  resize: none;
   margin-top: 5px;
 `;
 
@@ -139,7 +191,7 @@ const Row = styled.div`
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
-  gap: 20px; /* 버튼 간격 */
+  gap: 20px;
 `;
 
 const CancelButton = styled.button`
@@ -150,9 +202,12 @@ const CancelButton = styled.button`
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
-
   &:hover {
     background-color: #bfbfbf;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    background-color: #e0e0e0;
   }
 `;
 
@@ -164,8 +219,11 @@ const ConfirmButton = styled.button`
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
-
   &:hover {
     background-color: #0056b3;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    background-color: #a5d8ff;
   }
 `;

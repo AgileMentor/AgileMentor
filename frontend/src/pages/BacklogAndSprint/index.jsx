@@ -6,6 +6,8 @@ import Story from '@components/common/Story/index';
 import Sprint from '@components/common/Sprint/index';
 // eslint-disable-next-line import/no-unresolved
 import Backlog from '@components/common/Backlog/index';
+// eslint-disable-next-line import/no-unresolved
+import AIModal from '@components/common/AIModal';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
@@ -18,6 +20,7 @@ const BacklogAndSprintPage = () => {
   } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
@@ -49,7 +52,9 @@ const BacklogAndSprintPage = () => {
                 <Checkbox type="checkbox" checked={showOnlyMyTasks} readOnly />
                 내 작업만 보기
               </MyTasksButton>
-              <AIRecommendationButton>
+              <AIRecommendationButton
+                onClick={() => setIsAIModalOpen(true)} // 버튼 클릭 시 모달 열림
+              >
                 <StarIcon>⭐</StarIcon>
                 AI 추천
               </AIRecommendationButton>
@@ -69,6 +74,11 @@ const BacklogAndSprintPage = () => {
           </SprintSection>
         </ContentContainer>
       </MainContent>
+      {isAIModalOpen && (
+        <AIModal
+          onCancel={() => setIsAIModalOpen(false)}
+        />
+      )}
     </PageContainer>
   );
 };
