@@ -23,4 +23,6 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     List<Sprint> findByProject_ProjectIdAndIsDoneFalse(Long projectId);
 
     List<Sprint> findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(Long projectId);
+
+    void deleteByProject(Project project);
 }

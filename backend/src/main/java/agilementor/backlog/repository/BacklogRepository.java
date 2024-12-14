@@ -20,8 +20,12 @@ public interface BacklogRepository extends JpaRepository<Backlog, Long> {
 
     List<Backlog> findByAssigneeAndSprint(Member member, Sprint sprint);
 
+    List<Backlog> findByAssigneeAndProject(Member member, Project project);
+
     Optional<Backlog> findByBacklogIdAndProject(Long backlogId, Project project);
 
     // 스프린트 ID로 조회하고 상태가 특정 값이 아닌 백로그 반환
     List<Backlog> findBySprint_IdAndStatusNot(Long sprintId, Status status);
+
+    void deleteByProject(Project project);
 }

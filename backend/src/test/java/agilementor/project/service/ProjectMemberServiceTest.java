@@ -7,6 +7,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
+import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.entity.Priority;
+import agilementor.backlog.entity.Status;
+import agilementor.backlog.repository.BacklogRepository;
 import agilementor.common.exception.AlreadyJoinedMemberException;
 import agilementor.common.exception.KickOneselfException;
 import agilementor.common.exception.MemberNotFoundException;
@@ -44,6 +48,9 @@ class ProjectMemberServiceTest {
 
     @Mock
     private InvitationRepository invitationRepository;
+
+    @Mock
+    private BacklogRepository backlogRepository;
 
     @InjectMocks
     private ProjectMemberService projectMemberService;
@@ -108,13 +115,37 @@ class ProjectMemberServiceTest {
         // given
         List<ProjectMember> projectMemberList = createProjectMemberList();
 
+        Project project = projectMemberList.getFirst().getProject();
+        Member target = projectMemberList.get(1).getMember();
+        Long targetMemberId = target.getMemberId();
+
+        Backlog backlog1 = new Backlog("backlog1", "backlog1", Priority.MEDIUM, project, null, null,
+            target);
+        Backlog backlog2 = new Backlog("backlog2", "backlog2", Priority.MEDIUM, project, null, null,
+            target);
+        backlog2.update("backlog2", "backlog2", Status.IN_PROGRESS, Priority.MEDIUM, project, null,
+            null, target);
+        Backlog backlog3 = new Backlog("backlog3", "backlog3", Priority.MEDIUM, project, null, null,
+            target);
+        backlog3.update("backlog3", "backlog3", Status.DONE, Priority.MEDIUM, project, null, null,
+            target);
+        List<Backlog> backlogs = List.of(backlog1, backlog2, backlog3);
+
         given(projectMemberRepository.findByProjectId(PROJECT_ID)).willReturn(projectMemberList);
+        given(backlogRepository.findByAssigneeAndProject(target, project))
+            .willReturn(backlogs);
 
         // when
-        projectMemberService.kickMember(ADMIN_MEMBER_ID, PROJECT_ID, MEMBER_ID_1);
+        projectMemberService.kickMember(ADMIN_MEMBER_ID, PROJECT_ID, targetMemberId);
 
         // then
         then(projectMemberRepository).should().delete(any());
+        assertThat(backlog1.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog1.getAssignee()).isNull();
+        assertThat(backlog2.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog2.getAssignee()).isNull();
+        assertThat(backlog3.getStatus()).isEqualTo(Status.DONE);
+        assertThat(backlog3.getAssignee()).isEqualTo(target);
     }
 
     @Test

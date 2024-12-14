@@ -1,5 +1,7 @@
 package agilementor.project.service;
 
+import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.repository.BacklogRepository;
 import agilementor.common.exception.AlreadyJoinedMemberException;
 import agilementor.common.exception.KickOneselfException;
 import agilementor.common.exception.MemberNotFoundException;
@@ -28,14 +30,16 @@ public class ProjectMemberService {
     private final ProjectRespository projectRespository;
     private final ProjectMemberRepository projectMemberRepository;
     private final InvitationRepository invitationRepository;
+    private final BacklogRepository backlogRepository;
 
     public ProjectMemberService(MemberRepository memberRepository,
         ProjectRespository projectRespository, ProjectMemberRepository projectMemberRepository,
-        InvitationRepository invitationRepository) {
+        InvitationRepository invitationRepository, BacklogRepository backlogRepository) {
         this.memberRepository = memberRepository;
         this.projectRespository = projectRespository;
         this.projectMemberRepository = projectMemberRepository;
         this.invitationRepository = invitationRepository;
+        this.backlogRepository = backlogRepository;
     }
 
     public List<ProejctMemberResponse> getProjectMemberList(Long memberId, Long projectId) {
@@ -72,6 +76,14 @@ public class ProjectMemberService {
             .filter(projectMember -> projectMember.getMember().getMemberId().equals(targetMemberId))
             .findFirst()
             .orElseThrow(MemberNotFoundException::new);
+
+        Member member = targetProjectMember.getMember();
+        Project project = targetProjectMember.getProject();
+
+        List<Backlog> backlogList = backlogRepository.findByAssigneeAndProject(member, project);
+        backlogList.stream()
+            .filter(Backlog::isNotDone)
+            .forEach(Backlog::deleteAssignee);
 
         projectMemberRepository.delete(targetProjectMember);
     }

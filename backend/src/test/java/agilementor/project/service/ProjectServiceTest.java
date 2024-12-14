@@ -6,6 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
+import agilementor.backlog.entity.Backlog;
+import agilementor.backlog.entity.Priority;
+import agilementor.backlog.entity.Status;
+import agilementor.backlog.repository.BacklogRepository;
+import agilementor.backlog.repository.StoryRepository;
 import agilementor.common.exception.NotProjectAdminException;
 import agilementor.common.exception.ProjectNotFoundException;
 import agilementor.member.entity.Member;
@@ -17,6 +22,7 @@ import agilementor.project.entity.Project;
 import agilementor.project.entity.ProjectMember;
 import agilementor.project.repository.ProjectMemberRepository;
 import agilementor.project.repository.ProjectRespository;
+import agilementor.sprint.repository.SprintRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +43,15 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectMemberRepository projectMemberRepository;
+
+    @Mock
+    private BacklogRepository backlogRepository;
+
+    @Mock
+    private StoryRepository storyRepository;
+
+    @Mock
+    private SprintRepository sprintRepository;
 
     @InjectMocks
     private ProjectService projectService;
@@ -212,6 +227,9 @@ class ProjectServiceTest {
 
         // then
         then(projectMemberRepository).should().deleteAllByProject(project);
+        then(backlogRepository).should().deleteByProject(project);
+        then(storyRepository).should().deleteByProject(project);
+        then(sprintRepository).should().deleteByProject(project);
         then(projectRespository).should().delete(project);
     }
 
@@ -266,14 +284,34 @@ class ProjectServiceTest {
         Project project = new Project("title");
         ProjectMember projectMember = new ProjectMember(project, member, true);
 
+        Backlog backlog1 = new Backlog("backlog1", "backlog1", Priority.MEDIUM, project, null, null,
+            member);
+        Backlog backlog2 = new Backlog("backlog2", "backlog2", Priority.MEDIUM, project, null, null,
+            member);
+        backlog2.update("backlog2", "backlog2", Status.IN_PROGRESS, Priority.MEDIUM, project, null,
+            null, member);
+        Backlog backlog3 = new Backlog("backlog3", "backlog3", Priority.MEDIUM, project, null, null,
+            member);
+        backlog3.update("backlog3", "backlog3", Status.DONE, Priority.MEDIUM, project, null, null,
+            member);
+        List<Backlog> backlogs = List.of(backlog1, backlog2, backlog3);
+
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))
             .willReturn(Optional.of(projectMember));
+        given(backlogRepository.findByAssigneeAndProject(member, project))
+            .willReturn(backlogs);
 
         // when
         projectService.leaveProject(1L, 1L);
 
         // then
         then(projectMemberRepository).should().delete(projectMember);
+        assertThat(backlog1.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog1.getAssignee()).isNull();
+        assertThat(backlog2.getStatus()).isEqualTo(Status.TODO);
+        assertThat(backlog2.getAssignee()).isNull();
+        assertThat(backlog3.getStatus()).isEqualTo(Status.DONE);
+        assertThat(backlog3.getAssignee()).isEqualTo(member);
     }
 
     @Test

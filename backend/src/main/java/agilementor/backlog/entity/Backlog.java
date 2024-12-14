@@ -111,12 +111,17 @@ public class Backlog {
         this.story = story;
     }
 
-    public void setAssignee(Member assignee) {
-        this.assignee = assignee;
+    public void deleteAssignee() {
+        this.assignee = null;
+        this.status = Status.TODO;
     }
 
     public boolean isDone() {
         return status.equals(Status.DONE);
+    }
+
+    public boolean isNotDone() {
+        return !status.equals(Status.DONE);
     }
 
     public void update(String title, String description, Status status, Priority priority,
