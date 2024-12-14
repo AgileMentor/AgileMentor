@@ -13,12 +13,13 @@ const Layout = () => {
   const location = useLocation();
 
   const isIntroducePage = location.pathname === PATHS.ROOT;
+  const isAgileStudyPage = location.pathname === PATHS.AGILESTUDY;
 
   return (
     <Container>
       <Header />
       <Content>
-        {!isIntroducePage && <SideBar />}
+        {!isIntroducePage && !isAgileStudyPage && <SideBar />}
         <Main>
           <Outlet />
         </Main>
