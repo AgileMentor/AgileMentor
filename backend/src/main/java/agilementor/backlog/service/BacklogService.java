@@ -152,13 +152,6 @@ public class BacklogService {
             .toList();
     }
 
-    private Project findProject(Long memberId, Long projectId) {
-        ProjectMember projectMember = projectMemberRepository
-            .findByMemberIdAndProjectId(memberId, projectId)
-            .orElseThrow(ProjectNotFoundException::new);
-        return projectMember.getProject();
-    }
-
     public List<BacklogGetResponse> getTasks(Long memberId) {
 
         List<ProjectMember> projectMemberList = projectMemberRepository.findByMemberId(memberId);
@@ -177,6 +170,13 @@ public class BacklogService {
             .flatMap(List::stream)
             .map(BacklogGetResponse::from)
             .toList();
+    }
+
+    private Project findProject(Long memberId, Long projectId) {
+        ProjectMember projectMember = projectMemberRepository
+            .findByMemberIdAndProjectId(memberId, projectId)
+            .orElseThrow(ProjectNotFoundException::new);
+        return projectMember.getProject();
     }
 
     private void checkIsAttributesValid(Long projectId, Sprint sprint, Story story,
