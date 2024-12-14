@@ -53,7 +53,7 @@ const Backlog = ({ showOnlyMyTasks }) => {
   };
 
   const moveToBacklog = async (item) => {
-    const updatedBacklog = { ...item, sprintId: null };
+    const { ...updatedBacklog } = { ...item, sprintId: null };
 
     try {
       const response = await axios.put(

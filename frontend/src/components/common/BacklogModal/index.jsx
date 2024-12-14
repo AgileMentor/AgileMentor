@@ -129,9 +129,18 @@ const BacklogModal = ({ onCancel }) => {
                 value={backlog.status?.toUpperCase() || ''}
                 onChange={(e) => setBacklog({ ...backlog, status: e.target.value.toUpperCase() })}
               >
-                <option value="TODO">To Do</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
+                {backlog.sprintId === null ? (
+                  <>
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="DONE">Done</option>
+                  </>
+                )}
               </Select>
             </Column>
           </Row>

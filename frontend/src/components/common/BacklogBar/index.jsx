@@ -203,17 +203,19 @@ const BacklogBar = ({ backlogId }) => {
           </DropdownButton>
           {isDropdownOpen && (
             <DropdownMenu>
-              {['To Do', 'In Progress', 'Done'].map((option) => (
-                <DropdownItem
-                  key={option}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusChange(option);
-                  }}
-                >
-                  {option}
-                </DropdownItem>
-              ))}
+              {['To Do', 'In Progress', backlogData.sprintId !== null && 'Done']
+                .filter(Boolean)
+                .map((option) => (
+                  <DropdownItem
+                    key={option}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(option);
+                    }}
+                  >
+                    {option}
+                  </DropdownItem>
+                ))}
             </DropdownMenu>
           )}
         </Dropdown>
