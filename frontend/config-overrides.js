@@ -1,7 +1,7 @@
 // config-overrides.js
 const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
-const { override, addWebpackAlias } = require('customize-cra');
+const { override, addWebpackAlias, addBabelPlugin } = require('customize-cra');
 
 module.exports = override(
   addWebpackAlias({
@@ -11,4 +11,5 @@ module.exports = override(
     '@pages': path.resolve(__dirname, 'src/pages'),
     '@routes': path.resolve(__dirname, 'src/routes'),
   }),
+  addBabelPlugin('@babel/plugin-proposal-private-property-in-object'),
 );
