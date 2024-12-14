@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 // eslint-disable-next-line import/no-unresolved
 import { Common } from '@styles/globalStyle';
@@ -16,6 +17,7 @@ const Header = () => {
   const [invitations, setInvitations] = useState([]);
   const open = Boolean(anchorEl);
   const profileOpen = Boolean(profileAnchorEl);
+  const navigate = useNavigate();
 
   const removeInvitation = (invitationId) => {
     setInvitations((prev) => prev.filter((inv) => inv.invitationId !== invitationId));
@@ -86,9 +88,13 @@ const Header = () => {
     window.location.href = logoutURL;
   };
 
+  const handleLogoClick = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <HeaderContainer>
-      <LogoContainer>
+      <LogoContainer onClick={handleLogoClick}>
         <LogoImage src="/image/logo.png" alt="Agile Mentor Logo" />
         <LogoText>Agile Mentor</LogoText>
       </LogoContainer>
@@ -267,6 +273,7 @@ const HeaderContainer = styled.header`
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
+  cursor: pointer;
 `;
 
 const LogoImage = styled.img`
