@@ -75,7 +75,7 @@ const SideBar = () => {
             )}
             <Divider />
             <LogoutButtonWrapper>
-              <LogoutButton members={members} projectId={selectedProjectId} />
+              <LogoutButton />
             </LogoutButtonWrapper>
           </DividerWrapper>
         </>
