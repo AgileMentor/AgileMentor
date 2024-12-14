@@ -2,9 +2,31 @@ import React from 'react';
 import styled from 'styled-components';
 
 const GoogleLoginButton = () => {
-  const handleLoginClick = () => {
-    const googleOAuthURL = // api URL
-      (window.location.href = googleOAuthURL);
+  const handleLoginClick = async () => {
+    try {
+      const response = await fetch(
+        'https://api.agilementor.kr//api/auth/login',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          console.error('Invalid response format:', data);
+        }
+      } else {
+        console.error('Failed to initiate login process:', response.status);
+      }
+    } catch (error) {
+      console.error('An error occurred while initiating login process:', error);
+    }
   };
 
   return (
