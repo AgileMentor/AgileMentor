@@ -7,9 +7,9 @@ public record BacklogCreateRequest(
     @NotNull String title,
     @NotNull String description,
     @NotNull Priority priority,
-    long sprintId,
-    long storyId,
-    long memberId
+    Long sprintId,
+    Long storyId,
+    Long memberId
 ) {
 
 }
