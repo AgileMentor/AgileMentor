@@ -1,13 +1,12 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+// eslint-disable-next-line import/no-unresolved
+import HelpComponent from '@components/common/HelpComponent';
 import BurndownChart from '../../components/common/BurndownChart';
 import { useProjects } from '../../provider/projectContext';
 
 const BurndownPage = () => {
-  const {
-    projects,
-    selectedProjectId,
-  } = useProjects();
+  const { projects, selectedProjectId } = useProjects();
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
@@ -64,6 +63,7 @@ const BurndownPage = () => {
         </Box>
         <BurndownChart />
       </Box>
+      <HelpComponent page="burndown" />
     </Box>
   );
 };

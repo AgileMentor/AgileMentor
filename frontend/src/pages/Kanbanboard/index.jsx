@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography } from '@mui/material';
+// eslint-disable-next-line import/no-unresolved
+import HelpComponent from '@components/common/HelpComponent';
+// eslint-disable-next-line import/no-unresolved
+import HelpKanbanboardModal from '@components/common/HelpKanbanboardModal';
 import Kanban from '../../components/common/Kanban';
 import { useProjects } from '../../provider/projectContext';
 
 const KanbanboardPage = () => {
   const { projects, selectedProjectId } = useProjects();
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const selectedProjectTitle =
     projects.find((project) => project.projectId === selectedProjectId)
@@ -63,6 +68,12 @@ const KanbanboardPage = () => {
 
         <Kanban />
       </Box>
+
+      <HelpComponent onClick={() => setIsHelpModalOpen(true)} page="kanban" />
+
+      {isHelpModalOpen && (
+        <HelpKanbanboardModal onCancel={() => setIsHelpModalOpen(false)} />
+      )}
     </Box>
   );
 };

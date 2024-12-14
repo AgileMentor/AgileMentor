@@ -1,5 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Divider } from '@mui/material';
+// eslint-disable-next-line import/no-unresolved
+import HelpComponent from '@components/common/HelpComponent';
+// eslint-disable-next-line import/no-unresolved
+import HelpDashboardModal from '@components/common/HelpDashboardModal';
 import ExternalLinkButtons from '../../components/common/ExternalLinkButtons';
 import ProjectList from '../../components/common/ProjectList';
 import OngoingTasksList from '../../components/common/OngoingTasksList';
@@ -8,6 +12,7 @@ import { useProjects } from '../../provider/projectContext';
 
 const DashboardPage = () => {
   const { fetchUser, user } = useProjects();
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -61,7 +66,6 @@ const DashboardPage = () => {
           >
             {userName}님의 프로젝트
           </Typography>
-
           <Box sx={{ mt: 2 }}>
             <ExternalLinkButtons />
           </Box>
@@ -176,6 +180,15 @@ const DashboardPage = () => {
           </Paper>
         </Box>
       </Box>
+
+      <HelpComponent
+        onClick={() => setIsHelpModalOpen(true)}
+        page="dashboard"
+      />
+
+      {isHelpModalOpen && (
+        <HelpDashboardModal onCancel={() => setIsHelpModalOpen(false)} />
+      )}
     </Box>
   );
 };
