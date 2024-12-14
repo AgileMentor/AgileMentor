@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import styled from 'styled-components';
 // eslint-disable-next-line import/no-unresolved
 import HelpComponent from '@components/common/HelpComponent';
 import BurndownChart from '../../components/common/BurndownChart';
@@ -12,8 +13,16 @@ const BurndownPage = () => {
     projects.find((project) => project.projectId === selectedProjectId)
       ?.title || '프로젝트 선택하기';
 
+  if (!selectedProjectId) {
+    return (
+      <EmptyContainer>
+        <Message>프로젝트를 선택해주세요.</Message>
+      </EmptyContainer>
+    );
+  }
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh-9vh' }}>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 9vh)' }}>
       <Box
         component="main"
         sx={{
@@ -69,3 +78,18 @@ const BurndownPage = () => {
 };
 
 export default BurndownPage;
+
+const EmptyContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 9vh);
+  background-color: #fafafa;
+  color: #333;
+`;
+
+const Message = styled.div`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #555;
+`;
