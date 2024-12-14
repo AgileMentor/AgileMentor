@@ -102,7 +102,7 @@ const BacklogModal = ({ onCancel }) => {
                   })
                 }
               >
-                <option value="none">담당자가 없는 백로그</option>
+                <option value="none">담당자 없음</option>
                 {members.map((member) => (
                   <option key={member.memberId} value={member.memberId}>
                     {member.name}
