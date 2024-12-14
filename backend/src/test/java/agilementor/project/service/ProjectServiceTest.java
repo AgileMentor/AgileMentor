@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
+import agilementor.backlog.repository.BacklogRepository;
+import agilementor.backlog.repository.StoryRepository;
 import agilementor.common.exception.NotProjectAdminException;
 import agilementor.common.exception.ProjectNotFoundException;
 import agilementor.member.entity.Member;
@@ -17,6 +19,7 @@ import agilementor.project.entity.Project;
 import agilementor.project.entity.ProjectMember;
 import agilementor.project.repository.ProjectMemberRepository;
 import agilementor.project.repository.ProjectRespository;
+import agilementor.sprint.repository.SprintRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +40,15 @@ class ProjectServiceTest {
 
     @Mock
     private ProjectMemberRepository projectMemberRepository;
+
+    @Mock
+    private BacklogRepository backlogRepository;
+
+    @Mock
+    private StoryRepository storyRepository;
+
+    @Mock
+    private SprintRepository sprintRepository;
 
     @InjectMocks
     private ProjectService projectService;
@@ -212,6 +224,9 @@ class ProjectServiceTest {
 
         // then
         then(projectMemberRepository).should().deleteAllByProject(project);
+        then(backlogRepository).should().deleteByProject(project);
+        then(storyRepository).should().deleteByProject(project);
+        then(sprintRepository).should().deleteByProject(project);
         then(projectRespository).should().delete(project);
     }
 
