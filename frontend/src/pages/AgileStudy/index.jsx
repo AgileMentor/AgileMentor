@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+// eslint-disable-next-line import/no-unresolved
+import HelpComponent from '@components/common/HelpComponent';
 import AgileSideBar from '../../components/common/AgileSideBar';
 import contentData from '../../contentData';
 
@@ -25,6 +27,7 @@ const AgileStudy = () => {
         <HeaderContainer>
           <Title>{title}</Title>
           <Subtitle>{subtitle}</Subtitle>
+          <HelpComponent page="agilestudy" />
         </HeaderContainer>
         <ContentContainer>
           <Section>

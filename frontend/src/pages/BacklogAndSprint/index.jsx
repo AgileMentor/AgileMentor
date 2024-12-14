@@ -8,16 +8,13 @@ import Sprint from '@components/common/Sprint/index';
 import Backlog from '@components/common/Backlog/index';
 // eslint-disable-next-line import/no-unresolved
 import AIModal from '@components/common/AIModal';
+// eslint-disable-next-line import/no-unresolved
+import HelpComponent from '@components/common/HelpComponent';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
-  const {
-    projects,
-    selectedProjectId,
-    fetchSprints,
-    fetchBacklogs,
-    sprints,
-  } = useProjects();
+  const { projects, selectedProjectId, fetchSprints, fetchBacklogs, sprints } =
+    useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -47,6 +44,7 @@ const BacklogAndSprintPage = () => {
         <HeaderContainer>
           <Title>{selectedProjectTitle}</Title>
           <Subtitle>백로그 및 스프린트</Subtitle>
+          <HelpComponent />
         </HeaderContainer>
         <ContentContainer>
           <StoryContainer>
@@ -82,11 +80,7 @@ const BacklogAndSprintPage = () => {
           </SprintSection>
         </ContentContainer>
       </MainContent>
-      {isAIModalOpen && (
-        <AIModal
-          onCancel={() => setIsAIModalOpen(false)}
-        />
-      )}
+      {isAIModalOpen && <AIModal onCancel={() => setIsAIModalOpen(false)} />}
     </PageContainer>
   );
 };

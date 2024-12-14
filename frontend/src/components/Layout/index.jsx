@@ -6,6 +6,7 @@ import Header from '@components/features/Header';
 // eslint-disable-next-line import/no-unresolved
 import SideBar from '@components/features/SideBar';
 // eslint-disable-next-line import/no-unresolved
+import CommonHelpButton from '@components/common/CommonHelpButton';
 import styled from 'styled-components';
 import PATHS from '../../routes/path';
 
@@ -20,6 +21,7 @@ const Layout = () => {
       <Header />
       <Content>
         {!isIntroducePage && !isAgileStudyPage && <SideBar />}
+        {!isIntroducePage && <CommonHelpButton />}
         <Main>
           <Outlet />
         </Main>
