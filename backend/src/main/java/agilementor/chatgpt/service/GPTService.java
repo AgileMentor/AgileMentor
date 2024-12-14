@@ -84,7 +84,6 @@ public class GPTService {
         logger.info("Received GPT API Response: {}", gptResponse);
 
         String content = gptResponse.getChoices()[0].getMessage().getContent();
-        System.out.println("GPT Response Content: " + content);
 
         // ```json과 ```를 제거
         String sanitizedResponse = content.replaceAll("^```json|```$", "").trim();
