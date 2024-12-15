@@ -288,12 +288,11 @@ class ProjectServiceTest {
             member);
         Backlog backlog2 = new Backlog("backlog2", "backlog2", Priority.MEDIUM, project, null, null,
             member);
-        backlog2.update("backlog2", "backlog2", Status.IN_PROGRESS, Priority.MEDIUM, project, null,
-            null, member);
+        backlog2.update("backlog2", "backlog2", Status.IN_PROGRESS, Priority.MEDIUM, null, null,
+            member);
         Backlog backlog3 = new Backlog("backlog3", "backlog3", Priority.MEDIUM, project, null, null,
             member);
-        backlog3.update("backlog3", "backlog3", Status.DONE, Priority.MEDIUM, project, null, null,
-            member);
+        backlog3.update("backlog3", "backlog3", Status.DONE, Priority.MEDIUM, null, null, member);
         List<Backlog> backlogs = List.of(backlog1, backlog2, backlog3);
 
         given(projectMemberRepository.findByMemberIdAndProjectId(any(), any()))

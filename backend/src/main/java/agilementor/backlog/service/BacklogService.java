@@ -62,11 +62,26 @@ public class BacklogService {
         Long assigneeId = backlogCreateRequest.memberId();
 
         Project project = findProject(memberId, projectId);
-        Sprint sprint = sprintRepository.findById(sprintId).orElse(null);
-        Story story = storyRepository.findById(storyId).orElse(null);
-        Member assignee = memberRepository.findById(assigneeId).orElse(null);
+        Sprint sprint = null;
+        Story story = null;
+        Member assignee = null;
 
-        checkIsAttributesValid(projectId, sprint, story, assignee);
+        if (sprintId != null) {
+            sprint = sprintRepository.findByIdAndProject(sprintId, project)
+                .orElseThrow(SprintNotFoundException::new);
+        }
+
+        if (storyId != null) {
+            story = storyRepository.findByStoryIdAndProject(storyId, project)
+                .orElseThrow(StoryNotFoundException::new);
+        }
+
+        if (assigneeId != null) {
+            ProjectMember projectMember = projectMemberRepository.findByMemberIdAndProjectId(
+                    assigneeId, projectId)
+                .orElseThrow(MemberNotFoundException::new);
+            assignee = projectMember.getMember();
+        }
 
         Backlog backlog = new Backlog(title, description, priority, project, sprint, story,
             assignee);
@@ -118,13 +133,28 @@ public class BacklogService {
         Project project = findProject(memberId, projectId);
         Backlog backlog = backlogRepository.findByBacklogIdAndProject(backlogId, project)
             .orElseThrow(BacklogNotFoundException::new);
-        Sprint sprint = sprintRepository.findById(sprintId).orElse(null);
-        Story story = storyRepository.findById(storyId).orElse(null);
-        Member assignee = memberRepository.findById(assigneeId).orElse(null);
+        Sprint sprint = null;
+        Story story = null;
+        Member assignee = null;
 
-        checkIsAttributesValid(projectId, sprint, story, assignee);
+        if (sprintId != null) {
+            sprint = sprintRepository.findByIdAndProject(sprintId, project)
+                .orElseThrow(SprintNotFoundException::new);
+        }
 
-        backlog.update(title, description, status, priority, project, sprint, story, assignee);
+        if (storyId != null) {
+            story = storyRepository.findByStoryIdAndProject(storyId, project)
+                .orElseThrow(StoryNotFoundException::new);
+        }
+
+        if (assigneeId != null) {
+            ProjectMember projectMember = projectMemberRepository.findByMemberIdAndProjectId(
+                    assigneeId, projectId)
+                .orElseThrow(MemberNotFoundException::new);
+            assignee = projectMember.getMember();
+        }
+
+        backlog.update(title, description, status, priority, sprint, story, assignee);
 
         return BacklogUpdateResponse.from(backlog);
     }
@@ -152,19 +182,12 @@ public class BacklogService {
             .toList();
     }
 
-    private Project findProject(Long memberId, Long projectId) {
-        ProjectMember projectMember = projectMemberRepository
-            .findByMemberIdAndProjectId(memberId, projectId)
-            .orElseThrow(ProjectNotFoundException::new);
-        return projectMember.getProject();
-    }
-
     public List<BacklogGetResponse> getTasks(Long memberId) {
-
-        List<ProjectMember> projectMemberList = projectMemberRepository.findByMemberId(memberId);
 
         Member member = memberRepository.findById(memberId)
             .orElseThrow(MemberNotFoundException::new);
+
+        List<ProjectMember> projectMemberList = projectMemberRepository.findByMemberId(memberId);
 
         Stream<Sprint> activeSprints = projectMemberList.stream()
             .map(projectMember -> sprintRepository
@@ -179,19 +202,10 @@ public class BacklogService {
             .toList();
     }
 
-    private void checkIsAttributesValid(Long projectId, Sprint sprint, Story story,
-        Member assignee) {
-        if (sprint != null && !sprint.getProject().getProjectId().equals(projectId)) {
-            throw new SprintNotFoundException();
-        }
-
-        if (story != null && !story.getProject().getProjectId().equals(projectId)) {
-            throw new StoryNotFoundException();
-        }
-
-        if (assignee != null) {
-            projectMemberRepository.findByMemberIdAndProjectId(assignee.getMemberId(), projectId)
-                .orElseThrow(MemberNotFoundException::new);
-        }
+    private Project findProject(Long memberId, Long projectId) {
+        ProjectMember projectMember = projectMemberRepository
+            .findByMemberIdAndProjectId(memberId, projectId)
+            .orElseThrow(ProjectNotFoundException::new);
+        return projectMember.getProject();
     }
 }

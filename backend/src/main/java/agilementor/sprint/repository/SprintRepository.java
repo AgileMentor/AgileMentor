@@ -19,10 +19,13 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
     // 활성 스프린트 조회
     Optional<Sprint> findByProjectAndIsActivateTrue(Project project);
 
+    Optional<Sprint> findByIdAndProject(Long sprintId, Project project);
+
     // 특정 프로젝트의 isdone이 false인 모든 스프린트 조회
     List<Sprint> findByProject_ProjectIdAndIsDoneFalse(Long projectId);
 
     List<Sprint> findByProject_ProjectIdAndIsDoneTrueOrderByEndDateAsc(Long projectId);
 
     void deleteByProject(Project project);
+
 }
