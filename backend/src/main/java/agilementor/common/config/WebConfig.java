@@ -19,7 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOriginPatterns("https://agilementor.kr", "https://www.agilementor.kr")
+            .allowedOriginPatterns("https://agilementor.kr", "https://www.agilementor.kr", "https://api.agilementor.kr")
             .allowedMethods("GET", "POST", "PUT", "DELETE")
             .exposedHeaders("Location")
             .maxAge(1800)
