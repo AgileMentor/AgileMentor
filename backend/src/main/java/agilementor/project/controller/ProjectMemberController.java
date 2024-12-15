@@ -1,5 +1,6 @@
 package agilementor.project.controller;
 
+import agilementor.common.annotation.LoginMemberId;
 import agilementor.project.dto.request.ProjectInviteRequest;
 import agilementor.project.dto.response.ProejctMemberResponse;
 import agilementor.project.service.ProjectMemberService;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
 
 @Tag(name = "프로젝트 회원", description = "프로젝트 회원 관련 api입니다.")
 @RestController
@@ -32,8 +32,7 @@ public class ProjectMemberController {
     @GetMapping("/members")
     @Operation(summary = "프로젝트 회원 목록 조회", description = "프로젝트에 참가한 회원 목록을 조회합니다.")
     @ApiResponse(responseCode = "200", description = "프로젝트 회원 목록 조회 성공")
-    public List<ProejctMemberResponse> getProjectMemberList(
-        @SessionAttribute("memberId") Long memberId,
+    public List<ProejctMemberResponse> getProjectMemberList(@LoginMemberId Long memberId,
         @PathVariable Long projectId) {
 
         return projectMemberService.getProjectMemberList(memberId, projectId);
@@ -43,8 +42,8 @@ public class ProjectMemberController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "프로젝트 회원 추방", description = "프로젝트에 참가한 회원 한 명을 추방합니다.")
     @ApiResponse(responseCode = "204", description = "프로젝트 회원 추방 성공")
-    public void kickMember(@SessionAttribute("memberId") Long loginMemberId,
-        @PathVariable Long projectId, @PathVariable Long memberId) {
+    public void kickMember(@LoginMemberId Long loginMemberId, @PathVariable Long projectId,
+        @PathVariable Long memberId) {
 
         projectMemberService.kickMember(loginMemberId, projectId, memberId);
     }
@@ -52,8 +51,8 @@ public class ProjectMemberController {
     @PostMapping("/invitations")
     @Operation(summary = "프로젝트 회원 초대", description = "프로젝트에 회원 한 명을 초대합니다.")
     @ApiResponse(responseCode = "200", description = "프로젝트 회원 초대 성공")
-    public void inviteMember(@SessionAttribute("memberId") Long loginMemberId,
-        @PathVariable Long projectId, @RequestBody ProjectInviteRequest projectInviteRequest) {
+    public void inviteMember(@LoginMemberId Long loginMemberId, @PathVariable Long projectId,
+        @RequestBody ProjectInviteRequest projectInviteRequest) {
 
         projectMemberService.inviteMember(loginMemberId, projectId, projectInviteRequest);
     }

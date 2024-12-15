@@ -4,6 +4,7 @@ import agilementor.chatgpt.dto.GPTRequest;
 import agilementor.chatgpt.dto.GPTResponse;
 import agilementor.chatgpt.dto.ProjectResponseDTO;
 import agilementor.chatgpt.service.GPTService;
+import agilementor.common.annotation.LoginMemberId;
 import agilementor.common.exception.ProjectNotFoundException;
 import agilementor.project.entity.Project;
 import agilementor.project.repository.ProjectMemberRepository;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
 
 @Tag(name = "스프린트", description = "스프린트 관련 api입니다.")
 @RestController
@@ -40,10 +40,9 @@ public class GPTController {
     @PostMapping("/generate-task")
     @Operation(summary = "AI 자동 생성", description = "프로젝트의 목적에 맞는 스프린트, 스토리, 백로그를 chat gpt를 이용하여 생성합니다.")
     @ApiResponse(responseCode = "200", description = "AI 자동 생성 성공")
-    public ResponseEntity<ProjectResponseDTO> generateTasks(
-        @SessionAttribute(name = "memberId", required = false) Long memberId,
-        @PathVariable Long projectId,
-        @RequestBody GPTRequest request) throws JsonProcessingException {
+    public ResponseEntity<ProjectResponseDTO> generateTasks(@LoginMemberId Long memberId,
+        @PathVariable Long projectId, @RequestBody GPTRequest request)
+        throws JsonProcessingException {
 
         // 프로젝트 멤버인지 검증
         projectMemberRepository.findByMemberIdAndProjectId(memberId, projectId)
