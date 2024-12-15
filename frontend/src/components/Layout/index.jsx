@@ -8,6 +8,8 @@ import SideBar from '@components/features/SideBar';
 // eslint-disable-next-line import/no-unresolved
 import CommonHelpButton from '@components/common/CommonHelpButton';
 import styled from 'styled-components';
+// eslint-disable-next-line import/no-unresolved
+import IntroduceHeader from '@components/common/IntorduceHeader';
 import PATHS from '../../routes/path';
 
 const Layout = () => {
@@ -18,7 +20,8 @@ const Layout = () => {
 
   return (
     <Container>
-      <Header />
+      {isIntroducePage && <IntroduceHeader />}
+      {!isIntroducePage && <Header />}
       <Content>
         {!isIntroducePage && !isAgileStudyPage && <SideBar />}
         {!isIntroducePage && <CommonHelpButton />}
