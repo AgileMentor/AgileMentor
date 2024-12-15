@@ -31,6 +31,7 @@ public class StoryController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public StoryCreateResponse createStory(
         @Valid @RequestBody StoryCreateRequest storyCreateRequest, @PathVariable Long projectId,
         @SessionAttribute("memberId") Long memberId) {
