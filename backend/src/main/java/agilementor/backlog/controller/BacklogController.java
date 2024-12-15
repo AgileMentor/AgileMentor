@@ -6,6 +6,9 @@ import agilementor.backlog.dto.response.BacklogCreateResponse;
 import agilementor.backlog.dto.response.BacklogGetResponse;
 import agilementor.backlog.dto.response.BacklogUpdateResponse;
 import agilementor.backlog.service.BacklogService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -31,6 +34,7 @@ public class BacklogController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public BacklogCreateResponse createBacklog(
         @Valid @RequestBody BacklogCreateRequest backlogCreateRequest, @PathVariable Long projectId,
         @SessionAttribute("memberId") Long memberId) {
@@ -60,8 +64,8 @@ public class BacklogController {
         return backlogService.updateBacklog(memberId, projectId, backlogId, backlogUpdateRequest);
     }
 
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{backlogId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBacklog(@PathVariable Long projectId,
         @PathVariable Long backlogId, @SessionAttribute("memberId") Long memberId) {
 
