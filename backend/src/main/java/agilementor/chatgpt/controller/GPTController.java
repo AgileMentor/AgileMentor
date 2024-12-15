@@ -9,8 +9,6 @@ import agilementor.project.entity.Project;
 import agilementor.project.repository.ProjectMemberRepository;
 import agilementor.project.repository.ProjectRespository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 @RequestMapping("/api/projects/{projectId}/ai")
 public class GPTController {
 
-    private static final Logger logger = LoggerFactory.getLogger(GPTService.class);
     private final GPTService gptService;
     private final ProjectRespository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
