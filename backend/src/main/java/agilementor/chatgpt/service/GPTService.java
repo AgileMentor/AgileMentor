@@ -63,7 +63,7 @@ public class GPTService {
                     "You are a helpful assistant for agile project management."),
                 Map.of("role", "user", "content", userMessage)
             ),
-            "max_tokens", 2000,
+            "max_tokens", 16000,
             "temperature", 0.7
         );
 
