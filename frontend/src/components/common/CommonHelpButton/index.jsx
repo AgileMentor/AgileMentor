@@ -42,7 +42,7 @@ const ButtonWrapper = styled.button`
   color: white;
   font-size: 1.6rem;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 500;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
   &:hover {

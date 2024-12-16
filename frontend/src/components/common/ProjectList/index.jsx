@@ -109,7 +109,7 @@ const ProjectList = () => {
 
       {isModalOpen && (
         <MinModal
-          title="새 프로젝트 생성"
+          title="프로젝트 생성"
           description="프로젝트 이름"
           value={projectTitle}
           onChange={(e) => setProjectTitle(e.target.value)}

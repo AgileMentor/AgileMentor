@@ -18,7 +18,7 @@ const Layout = () => {
 
   return (
     <Container>
-      <Header />
+      {!isIntroducePage && <Header />}
       <Content>
         {!isIntroducePage && !isAgileStudyPage && <SideBar />}
         {!isIntroducePage && <CommonHelpButton />}
