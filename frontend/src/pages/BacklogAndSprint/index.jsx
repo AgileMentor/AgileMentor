@@ -13,8 +13,14 @@ import HelpComponent from '@components/common/HelpComponent';
 import { useProjects } from '../../provider/projectContext';
 
 const BacklogAndSprintPage = () => {
-  const { projects, selectedProjectId, fetchSprints, fetchBacklogs, sprints, setIsSprintActive } =
-    useProjects();
+  const {
+    projects,
+    selectedProjectId,
+    fetchSprints,
+    fetchBacklogs,
+    sprints,
+    setIsSprintActive,
+  } = useProjects();
 
   const [showOnlyMyTasks, setShowOnlyMyTasks] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -49,7 +55,7 @@ const BacklogAndSprintPage = () => {
         <HeaderContainer>
           <Title>{selectedProjectTitle}</Title>
           <Subtitle>백로그 및 스프린트</Subtitle>
-          <HelpComponent />
+          <HelpComponent page="backlogandsprint" />
         </HeaderContainer>
         <ContentContainer>
           <StoryContainer>
@@ -63,9 +69,7 @@ const BacklogAndSprintPage = () => {
                 <Checkbox type="checkbox" checked={showOnlyMyTasks} readOnly />
                 내 작업만 보기
               </MyTasksButton>
-              <AIRecommendationButton
-                onClick={() => setIsAIModalOpen(true)}
-              >
+              <AIRecommendationButton onClick={() => setIsAIModalOpen(true)}>
                 <StarIcon>⭐</StarIcon>
                 AI 추천
               </AIRecommendationButton>

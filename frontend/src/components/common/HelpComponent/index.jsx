@@ -10,6 +10,8 @@ import HelpKanbanboardModal from '@components/common/HelpKanbanboardModal';
 import HelpAgileStudyModal from '@components/common/HelpAgileStudyModal';
 // eslint-disable-next-line import/no-unresolved
 import HelpBurndownModal from '@components/common/HelpBurndownModal';
+// eslint-disable-next-line import/no-unresolved
+import HelpSprintModal from '@components/common/HelpSprintModal';
 
 const HelpButton = ({ page }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +36,9 @@ const HelpButton = ({ page }) => {
     }
     if (page === 'burndown') {
       return <HelpBurndownModal onCancel={handleModalClose} />;
+    }
+    if (page === 'backlogandsprint') {
+      return <HelpSprintModal onCancel={handleModalClose} />;
     }
     return null;
   };
