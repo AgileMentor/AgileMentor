@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 // eslint-disable-next-line import/no-unresolved
@@ -10,12 +11,26 @@ import { useProjects } from '../../provider/projectContext';
 export const HEADER_HEIGHT = '9vh';
 
 const Header = () => {
-  const { user, fetchProjects } = useProjects();
+  const { user, fetchUser, fetchProjects } = useProjects();
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileAnchorEl, setProfileAnchorEl] = useState(null);
   const [invitations, setInvitations] = useState([]);
+  const navigate = useNavigate();
   const open = Boolean(anchorEl);
   const profileOpen = Boolean(profileAnchorEl);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        await fetchUser();
+        console.log('User information fetched successfully.');
+      } catch (err) {
+        console.error('Error fetching user information:', err);
+      }
+    };
+
+    fetchUserInfo();
+  }, [fetchUser]);
 
   const removeInvitation = (invitationId) => {
     setInvitations((prev) => prev.filter((inv) => inv.invitationId !== invitationId));
@@ -86,9 +101,13 @@ const Header = () => {
     window.location.href = logoutURL;
   };
 
+  const handleLogoClick = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <HeaderContainer>
-      <LogoContainer>
+      <LogoContainer onClick={handleLogoClick}>
         <LogoImage src="/image/logo.png" alt="Agile Mentor Logo" />
         <LogoText>Agile Mentor</LogoText>
       </LogoContainer>
@@ -174,7 +193,12 @@ const Header = () => {
           onClose={handleClose}
           slotProps={{
             paper: {
-              style: { width: '300px' },
+              style: {
+                width: '300px',
+                borderRadius: '10px',
+                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                padding: '8px',
+              },
             },
           }}
         >
@@ -259,7 +283,7 @@ const HeaderContainer = styled.header`
   height: ${HEADER_HEIGHT};
   background-color: ${Common.colors.primary};
   box-shadow: 0px 0.4vh 0.6vh rgba(0, 0, 0, 0.1);
-  z-index: 9999;
+  z-index: 1000;
   position: relative;
   padding: 0 20px;
 `;
@@ -267,6 +291,7 @@ const HeaderContainer = styled.header`
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
+  cursor: pointer;
 `;
 
 const LogoImage = styled.img`

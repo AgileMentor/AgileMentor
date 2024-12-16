@@ -15,7 +15,7 @@ public class SwaggerConfig {
 
         Info info = new Info().title("AgileMentor")
             .description("AgileMentor API 문서")
-            .version("0.1.0");
+            .version("1.0.0");
 
         Server server = new Server()
             .url("https://api.agilementor.kr");
@@ -24,4 +24,5 @@ public class SwaggerConfig {
             .info(info)
             .servers(List.of(server));
     }
+    
 }

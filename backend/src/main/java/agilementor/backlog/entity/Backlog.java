@@ -99,10 +99,6 @@ public class Backlog {
         return priority;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
-    }
-
     public void setSprint(Sprint sprint) {
         this.sprint = sprint;
     }
@@ -125,12 +121,11 @@ public class Backlog {
     }
 
     public void update(String title, String description, Status status, Priority priority,
-        Project project, Sprint sprint, Story story, Member assignee) {
+        Sprint sprint, Story story, Member assignee) {
         this.title = title;
         this.description = description;
         this.status = status;
         this.priority = priority;
-        this.project = project;
         this.sprint = sprint;
         this.story = story;
         this.assignee = assignee;

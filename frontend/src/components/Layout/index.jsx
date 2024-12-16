@@ -20,8 +20,7 @@ const Layout = () => {
 
   return (
     <Container>
-      {isIntroducePage && <IntroduceHeader />}
-      {!isIntroducePage && <Header />}
+      {isIntroducePage ? <IntroduceHeader /> : <Header />}
       <Content>
         {!isIntroducePage && !isAgileStudyPage && <SideBar />}
         {!isIntroducePage && <CommonHelpButton />}

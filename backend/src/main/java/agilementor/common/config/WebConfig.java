@@ -1,32 +1,34 @@
 package agilementor.common.config;
 
-import agilementor.common.filter.SessionValidationFilter;
-import jakarta.servlet.Filter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
+import agilementor.common.resolver.LoginMemberIdArgumentResolver;
+import java.util.List;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    private final LoginMemberIdArgumentResolver loginMemberIdArgumentResolver;
+
+    public WebConfig(LoginMemberIdArgumentResolver loginMemberIdArgumentResolver) {
+        this.loginMemberIdArgumentResolver = loginMemberIdArgumentResolver;
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOriginPatterns("*")  // todo: 테스트가 끝나면 https://agilementor.kr로 수정
+            .allowedOriginPatterns("https://agilementor.kr", "https://www.agilementor.kr", "https://api.agilementor.kr")
             .allowedMethods("GET", "POST", "PUT", "DELETE")
             .exposedHeaders("Location")
             .maxAge(1800)
             .allowCredentials(true);
     }
 
-//    @Bean
-//    public FilterRegistrationBean loginCheckFilter() {
-//        FilterRegistrationBean<Filter> filterFilterRegistrationBean = new FilterRegistrationBean<>();
-//        filterFilterRegistrationBean.setFilter(new SessionValidationFilter());
-//        filterFilterRegistrationBean.setOrder(1);
-//        filterFilterRegistrationBean.addUrlPatterns("/api/*");
-//        return filterFilterRegistrationBean;
-//    }
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(loginMemberIdArgumentResolver);
+    }
+
 }

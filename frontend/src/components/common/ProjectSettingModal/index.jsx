@@ -6,7 +6,7 @@ import { useProjects } from '../../../provider/projectContext';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 
 const ProjectSettingModal = ({ onCancel }) => {
-  const { selectedProjectId, projects, fetchProjects, fetchMembers, setSelectedProjectId } = useProjects();
+  const { selectedProjectId, projects, fetchProjects, setSelectedProjectId } = useProjects();
   const selectedProject = projects.find((project) => project.projectId === selectedProjectId);
   const initialProjectName = selectedProject?.title || '프로젝트 이름 없음';
 
@@ -46,8 +46,7 @@ const ProjectSettingModal = ({ onCancel }) => {
         { withCredentials: true }
       );
       alert('프로젝트가 성공적으로 삭제되었습니다.');
-      setSelectedProjectId(null); 
-      fetchMembers(null);
+      setSelectedProjectId(null);
       fetchProjects();
       setIsDeleteModalOpen(false);
       onCancel();
